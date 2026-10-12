@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Card3D, type CardContent } from "./Card3D";
@@ -138,10 +137,9 @@ export function OpenCard({
             Tap to open
           </motion.button>
         )}
-        {stage === "open" && (
-          <motion.div key="cta" className="open-cta" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: brand ? 2.4 : 1.6, duration: 0.6 }} style={{ display: "flex", gap: 10 }}>
-            {brand && !book && <button className="btn btn-brand" onClick={() => setSheet(true)}>See your gift</button>}
-            <Link href="/send" className={brand && !book ? "btn btn-ghost" : "btn btn-primary"} style={brand && !book ? { background: "rgba(255,255,255,.8)" } : undefined}>Send one back</Link>
+        {stage === "open" && brand && !book && (
+          <motion.div key="cta" className="open-cta" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 2.4, duration: 0.6 }}>
+            <button className="btn btn-brand" onClick={() => setSheet(true)}>See your gift</button>
           </motion.div>
         )}
         {stage === "open" && brand && gift && !book && (
