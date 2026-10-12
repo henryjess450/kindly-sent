@@ -67,14 +67,17 @@ function Champagne({ d }: ArtProps) {
 function Rocket({ d }: ArtProps) {
   return (
     <>
-      {scatter(16, 9).map((p, i) => {
-        const dur = r1(1.2 + p.r * 1.4);
-        return (
-          <g key={i} transform={`translate(${r1(40 + p.x * 0.84)} 0)`}>
-            <line x1={0} y1={0} x2={0} y2={r1(26 + p.y * 0.05)} stroke={d.ink} strokeWidth={2} strokeLinecap="round" style={anim("ks-milestones-streak", dur, { ease: "linear", delay: -r1(p.q * dur) })} />
-          </g>
-        );
-      })}
+      <clipPath id="rocket-sky"><rect x={0} y={0} width={500} height={530} /></clipPath>
+      <g clipPath="url(#rocket-sky)">
+        {scatter(16, 9).map((p, i) => {
+          const dur = r1(1.2 + p.r * 1.4);
+          return (
+            <g key={i} transform={`translate(${r1(40 + p.x * 0.84)} 0)`}>
+              <line x1={0} y1={0} x2={0} y2={r1(26 + p.y * 0.05)} stroke={d.ink} strokeWidth={2} strokeLinecap="round" style={anim("ks-milestones-streak", dur, { ease: "linear", delay: -r1(p.q * dur) })} />
+            </g>
+          );
+        })}
+      </g>
       <g style={anim("ks-float", 2.8, { vars: { "--rise": "-14px" } })}>
         <g style={anim("ks-flicker", 0.5, { origin: "50% 0%" })}>
           <path d="M230 444 C 228 480, 244 512, 250 536 C 256 512, 272 480, 270 444 Z" fill="#FFB020" />
@@ -262,6 +265,12 @@ function ShootingStar({ d }: ArtProps) {
         </g>
       </g>
       <path d={starPath(150, 430, 10, 4)} fill={d.accent} opacity={0.8} style={anim("ks-twinkle", 3)} />
+      {/* The wishing star: always there, glowing softly while the shooting star passes. */}
+      <circle cx={250} cy={350} r={64} fill="#FFD860" style={anim("ks-glow", 3.2, { vars: { "--lo": "0.04", "--hi": "0.12" } })} />
+      <g style={anim("ks-sway", 6, { vars: { "--amp": "5deg" } })}>
+        <path d={starPath(250, 350, 50, 22)} fill="#FFD860" strokeLinejoin="round" stroke="#FFD860" strokeWidth={8} />
+        <path d={starPath(250, 350, 28, 12)} fill="#FFF6D6" />
+      </g>
       <Kicker y={566} fill={d.ink}>Make a wish</Kicker>
       <Title y={628} size={44} fill={d.ink}>Wishing you luck</Title>
     </>

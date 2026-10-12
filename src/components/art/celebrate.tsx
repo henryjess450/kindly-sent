@@ -179,7 +179,7 @@ function Swans({ d }: ArtProps) {
         </g>
       ))}
       <Kicker y={582} fill={d.ink}>Happy</Kicker>
-      <Title y={644} size={56} fill={d.ink} serif italic>anniversary</Title>
+      <Title y={644} size={56} fill={d.ink} serif italic>Anniversary</Title>
     </>
   );
 }
@@ -265,8 +265,8 @@ function WeddingCake({ d }: ArtProps) {
         <Bloom x={274} y={244} r={11} c="#F2C4CE" />
         <Bloom x={250} y={232} r={14} c={d.accent} />
       </g>
-      <Kicker y={590} fill={d.ink}>Happily</Kicker>
-      <Title y={648} size={56} fill={d.ink} serif italic>ever after</Title>
+      <Kicker y={590} fill={d.ink}>Here&apos;s to your</Kicker>
+      <Title y={648} size={50} fill={d.ink} serif italic>Happily ever after</Title>
     </>
   );
 }
@@ -340,7 +340,7 @@ function Rattle({ d }: ArtProps) {
         <ellipse cx={210} cy={226} rx={14} ry={24} fill="#fff" opacity={0.3} transform="rotate(30 210 226)" />
       </g>
       <Kicker y={596} fill={d.ink}>Welcome</Kicker>
-      <Title y={652} size={58} fill={d.ink} serif italic>little one</Title>
+      <Title y={652} size={58} fill={d.ink} serif italic>Little one</Title>
     </>
   );
 }
@@ -374,7 +374,7 @@ function Lamb({ d }: ArtProps) {
         </g>
       ))}
       <Kicker y={586} fill={d.ink}>Sweet dreams</Kicker>
-      <Title y={648} size={62} fill={d.ink} serif italic>baby</Title>
+      <Title y={648} size={62} fill={d.ink} serif italic>Little lamb</Title>
     </>
   );
 }

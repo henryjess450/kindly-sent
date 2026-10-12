@@ -223,9 +223,10 @@ function Hand({ skin, sleeve }: { skin: string; sleeve: string }) {
   return (
     <>
       <rect x={-30} y={30} width={60} height={130} rx={12} fill={sleeve} />
-      {[-31, -10, 11, 32].map((fx, i) => <rect key={fx} x={fx - 9.5} y={[-92, -104, -100, -84][i]} width={19} height={80} rx={9.5} fill={skin} />)}
+      {/* Palm toward the other hand: thumb on the inside, pinky on the outside. */}
+      {[-32, -11, 10, 31].map((fx, i) => <rect key={fx} x={fx - 9.5} y={[-84, -100, -104, -92][i]} width={19} height={80} rx={9.5} fill={skin} />)}
       <rect x={-42} y={-40} width={84} height={86} rx={28} fill={skin} />
-      <rect x={-72} y={-12} width={52} height={20} rx={10} fill={skin} transform="rotate(-35 -40 0)" />
+      <rect x={20} y={-12} width={52} height={20} rx={10} fill={skin} transform="rotate(-50 40 0)" />
     </>
   );
 }
@@ -296,7 +297,9 @@ function RoadTrip({ d }: ArtProps) {
         <line x1={-40} y1={515} x2={540} y2={515} stroke="#F4E3B5" strokeWidth={4} strokeDasharray="24 16" style={anim("ks-family-road", 0.8, { ease: "linear" })} />
       </g>
       <g style={anim("ks-family-bounce", 0.9)}>
-        <ellipse cx={240} cy={372} rx={82} ry={8} fill="#3A86FF" />
+        <rect x={196} y={372} width={6} height={10} rx={2} fill="#5B5B6E" />
+        <rect x={278} y={372} width={6} height={10} rx={2} fill="#5B5B6E" />
+        <ellipse cx={240} cy={371} rx={82} ry={8} fill="#3A86FF" />
         <rect x={150} y={380} width={200} height={82} rx={22} fill={d.accent} />
         <path d="M150 420 V402 Q150 380 172 380 H300 Q330 380 345 410 L350 420 Z" fill="#FFF8EC" />
         <path d="M300 390 H312 Q328 390 336 412 H300 Z" fill="#9FD3E6" />

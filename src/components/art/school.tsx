@@ -75,8 +75,8 @@ function Pencil({ d }: ArtProps) {
           </g>
         </g>
       </g>
-      <Kicker y={540} fill={d.ink}>You helped me</Kicker>
-      <Title y={604} size={48} fill={d.ink}>write my story</Title>
+      <Kicker y={540} fill={d.ink}>You helped me write my story</Kicker>
+      <Title y={604} size={52} fill={d.ink}>Thanks, teacher</Title>
     </>
   );
 }

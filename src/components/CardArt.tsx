@@ -108,7 +108,7 @@ function BigHeart({ d }: { d: Design }) {
         <path d="M250 570 C 120 480, 64 400, 100 318 C 136 240, 222 244, 250 306 C 278 244, 364 240, 400 318 C 436 400, 380 480, 250 570 Z" fill={d.accent} />
         <ellipse cx={160} cy={322} rx={18} ry={30} fill="#fff" opacity={0.3} transform="rotate(30 160 322)" />
       </g>
-      <Title y={636} size={26} fill={d.ink} weight={600}>person</Title>
+      <Title y={640} size={62} fill={d.ink} serif italic>person</Title>
     </>
   );
 }
@@ -245,8 +245,8 @@ function GoldStars({ d }: { d: Design }) {
         <path d={starPath(250, 320, 150, 64)} fill="#F2B705" strokeLinejoin="round" stroke="#F2B705" strokeWidth={16} />
         <path d={starPath(250, 320, 96, 40)} fill="#FFD860" />
       </g>
-      <path d="M150 498 h200 l-20 26 l20 26 h-200 l20 -26 Z" fill={d.accent} />
-      <text x={250} y={532} textAnchor="middle" fill="#fff" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, letterSpacing: 3 }}>CONGRATULATIONS</text>
+      <path d="M100 498 h300 l-22 26 l22 26 h-300 l22 -26 Z" fill={d.accent} />
+      <text x={250} y={530} textAnchor="middle" fill="#fff" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 16, letterSpacing: 2.5 }}>CONGRATULATIONS</text>
       <Title y={630} size={64} fill={d.ink}>You did it</Title>
     </>
   );

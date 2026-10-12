@@ -104,13 +104,14 @@ function Diya({ d }: ArtProps) {
     <>
       <g style={anim("ks-spin", 48, { ...pivot(250, 380), ease: "linear" })}>
         {Array.from({ length: 12 }, (_, i) => (
-          <ellipse key={i} cx={250} cy={262} rx={18} ry={34} fill={cols[i % 2 ? 0 : 1]} opacity={0.85} transform={`rotate(${i * 30} 250 380)`} />
+          <ellipse key={i} cx={250} cy={232} rx={17} ry={30} fill={cols[i % 2 ? 0 : 1]} opacity={0.85} transform={`rotate(${i * 30} 250 380)`} />
         ))}
         {Array.from({ length: 24 }, (_, i) => (
-          <circle key={i} cx={250} cy={218} r={5} fill={cols[2 + (i % 2)]} transform={`rotate(${i * 15} 250 380)`} />
+          <circle key={i} cx={250} cy={202} r={5} fill={cols[2 + (i % 2)]} transform={`rotate(${i * 15} 250 380)`} />
         ))}
-        <circle cx={250} cy={380} r={92} fill="none" stroke="#FFD25A" strokeWidth={3} strokeDasharray="4 10" strokeLinecap="round" />
+        <circle cx={250} cy={380} r={112} fill="none" stroke="#FFD25A" strokeWidth={3} strokeDasharray="4 10" strokeLinecap="round" />
       </g>
+      <g transform="translate(232 398) scale(0.78) translate(-255 -385)">
       <circle cx={340} cy={326} r={46} fill="#FFD27A" style={anim("ks-glow", 2, { vars: { "--lo": "0.18", "--hi": "0.45" } })} />
       <g style={anim("ks-flicker", 1.3, { origin: "50% 100%" })}>
         <path d="M340 290 C 324 318, 326 342, 340 346 C 354 342, 356 318, 340 290 Z" fill="#FFB020" />
@@ -119,6 +120,7 @@ function Diya({ d }: ArtProps) {
       <path d="M160 384 C 182 452, 300 458, 334 396 L 358 366 C 330 378, 300 390, 250 392 C 210 392, 184 388, 160 384 Z" fill="#C0582A" />
       <path d="M164 386 C 200 394, 300 396, 350 372" stroke="#8E3A18" strokeWidth={4} fill="none" strokeLinecap="round" />
       {[200, 230, 260, 290].map((x, i) => <circle key={x} cx={x} cy={420 + (i % 2) * 6} r={5} fill="#FFD25A" />)}
+      </g>
       <Twinkles color={d.accent} pts={[{ x: 90, y: 110, r: 10 }, { x: 410, y: 140, r: 13 }, { x: 70, y: 520, r: 8 }, { x: 430, y: 560, r: 9 }]} />
       <Kicker y={590} fill={d.ink}>Light, love &amp; sweets</Kicker>
       <Title y={648} fill={d.ink}>Happy Diwali</Title>

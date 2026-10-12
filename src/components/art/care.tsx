@@ -77,8 +77,8 @@ function CatNap({ d }: ArtProps) {
       <Zed x={196} y={330} size={34} delay={0} fill={d.ink} />
       <Zed x={214} y={318} size={26} delay={-1.5} fill={d.ink} />
       <Zed x={230} y={306} size={20} delay={-3} fill={d.ink} />
-      <Kicker y={588} fill={d.ink}>Just thinking</Kicker>
-      <Title y={648} size={60} fill={d.ink} serif italic>of you</Title>
+      <Kicker y={588} fill={d.ink}>Just because</Kicker>
+      <Title y={648} size={52} fill={d.ink} serif italic>Thinking of you</Title>
     </>
   );
 }
@@ -337,8 +337,8 @@ function Lantern({ d }: ArtProps) {
           <path d="M250 398 c -8 8 -8 18 0 24 c 8 -6 8 -16 0 -24 Z" fill="#FFE29A" style={anim("ks-flicker", 1.4, { origin: "50% 100%" })} />
         </g>
       </g>
-      <Kicker y={590} fill={d.ink}>Holding you</Kicker>
-      <Title y={648} size={54} fill={d.ink} serif italic>in my heart</Title>
+      <Kicker y={590} fill={d.ink}>You&apos;re always</Kicker>
+      <Title y={648} size={56} fill={d.ink} serif italic>In my heart</Title>
     </>
   );
 }
