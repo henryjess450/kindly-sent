@@ -16,18 +16,31 @@ export async function sendMail(mail: Mail) {
     console.log(`[mail preview] to ${mail.to}: ${mail.subject}`);
     return;
   }
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER) throw new Error("SMTP is not configured");
+  const cfg = smtpConfig();
   transport ??= nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT ?? 465),
-    secure: Number(process.env.SMTP_PORT ?? 465) === 465,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.port === 465,
+    auth: { user: cfg.user, pass: cfg.pass },
   });
-  await transport.sendMail({
-    from: process.env.MAIL_FROM ?? process.env.SMTP_USER,
-    to: mail.to,
-    subject: mail.subject,
-    html: mail.html,
-    text: mail.text,
-  });
+  await transport.sendMail({ from: cfg.from, to: mail.to, subject: mail.subject, html: mail.html, text: mail.text });
+}
+
+/**
+ * Gmail (GMAIL_USER + GMAIL_APP_PASSWORD, the same lines Coastline uses) wins
+ * when set; otherwise any SMTP server via SMTP_*. The From address defaults to
+ * the account that sends, since Gmail and Titan both reject other addresses.
+ */
+function smtpConfig() {
+  const clean = (v?: string) => (v ?? "").trim();
+  const gmailUser = clean(process.env.GMAIL_USER);
+  const gmailPass = clean(process.env.GMAIL_APP_PASSWORD).replace(/\s/g, "");
+  const gmail = !!gmailUser && !!gmailPass;
+  const user = gmail ? gmailUser : clean(process.env.SMTP_USER);
+  const pass = gmail ? gmailPass : clean(process.env.SMTP_PASS);
+  const host = gmail ? "smtp.gmail.com" : clean(process.env.SMTP_HOST);
+  if (!host || !user || !pass) throw new Error("Email is not set up: add GMAIL_USER and GMAIL_APP_PASSWORD to .env");
+  const port = gmail ? 465 : Number(process.env.SMTP_PORT ?? 465);
+  const from = clean(process.env.MAIL_FROM) && clean(process.env.MAIL_FROM).includes(user) ? clean(process.env.MAIL_FROM) : `"Kindly Sent" <${user}>`;
+  return { host, port, user, pass, from };
 }
