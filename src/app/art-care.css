@@ -1,0 +1,32 @@
+/* Keyframes for the "care" covers. Prefix every name with ks-care- */
+/* Every loop starts and ends in the same pose; anything that travels returns while invisible. */
+@keyframes ks-care-breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.025, 1.05); } }
+@keyframes ks-care-squish { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.05, 0.95); } }
+@keyframes ks-care-rise {
+  0%, 100% { transform: translate(0, 0) scale(0.7); opacity: 0; }
+  20% { opacity: var(--o, 1); }
+  80% { transform: translate(var(--dx, 0px), var(--h, -80px)) scale(1); opacity: 0; }
+}
+@keyframes ks-care-puff {
+  0%, 100% { transform: scale(0.4); opacity: 0; }
+  30% { transform: scale(1.05); opacity: 1; }
+  60% { transform: scale(1); opacity: 0.9; }
+  85% { transform: scale(1.15); opacity: 0; }
+}
+@keyframes ks-care-rain {
+  0%, 100% { transform: translate(0, 0); opacity: 0; }
+  8%, 80% { opacity: 0.75; }
+  88% { transform: translate(-12px, var(--fall, 400px)); opacity: 0; }
+}
+@keyframes ks-care-bounce {
+  0%, 100% { transform: translateY(0) scale(1, 1); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  46% { transform: translateY(200px) scale(0.94, 1.08); animation-timing-function: ease-out; }
+  50% { transform: translateY(200px) scale(1.22, 0.78); animation-timing-function: ease-in; }
+  54% { transform: translateY(200px) scale(0.94, 1.08); animation-timing-function: cubic-bezier(0, 0.55, 0.45, 1); }
+}
+@keyframes ks-care-shadow {
+  0%, 100% { transform: scale(0.45); opacity: 0.25; animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  46% { transform: scale(1); opacity: 0.6; animation-timing-function: ease-out; }
+  50% { transform: scale(1.15); opacity: 0.7; animation-timing-function: ease-in; }
+  54% { transform: scale(1); opacity: 0.6; animation-timing-function: cubic-bezier(0, 0.55, 0.45, 1); }
+}

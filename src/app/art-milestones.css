@@ -1,0 +1,44 @@
+/* Keyframes for the "milestones" covers. Prefix every name with ks-milestones- */
+/* Every loop starts and ends on the same frame; anything that has to "jump back" does so while invisible. */
+@keyframes ks-milestones-shine { 0%, 100% { transform: translateX(-60px); opacity: 1; } 45% { transform: translateX(260px); opacity: 1; } 50% { transform: translateX(260px); opacity: 0; } 95% { transform: translateX(-60px); opacity: 0; } }
+@keyframes ks-milestones-pop {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  16% { transform: translateY(0) rotate(5deg); }
+  22% { transform: translateY(0) rotate(-5deg); }
+  28% { transform: translateY(0) rotate(0deg); }
+  40% { transform: translateY(-80px) rotate(-25deg); }
+  52% { transform: translateY(-96px) rotate(-40deg); }
+  72% { transform: translateY(-18px) rotate(-6deg); }
+  82% { transform: translateY(0) rotate(0deg); }
+}
+@keyframes ks-milestones-streak { 0%, 100% { transform: translateY(-80px); opacity: 0; } 6% { opacity: 0.8; } 84% { opacity: 0.8; } 90% { transform: translateY(780px); opacity: 0; } }
+@keyframes ks-milestones-wave { 0%, 100% { transform: skewY(0deg) scaleX(1); } 25% { transform: skewY(7deg) scaleX(0.93); } 75% { transform: skewY(-7deg) scaleX(0.88); } }
+@keyframes ks-milestones-swing { 0%, 100% { transform: skewX(-9deg); } 50% { transform: skewX(9deg); } }
+@keyframes ks-milestones-smoke { 0%, 100% { transform: translate(0, 0) scale(0.5); opacity: 0; } 10% { opacity: 0.75; } 85% { transform: translate(26px, -110px) scale(1.7); opacity: 0; } }
+@keyframes ks-milestones-shoot { 0%, 100% { transform: translate(0, 0); opacity: 0; } 6% { opacity: 1; } 48% { opacity: 1; } 58% { transform: translate(340px, 212px); opacity: 0; } }
+@keyframes ks-milestones-write {
+  0%, 100% { stroke-dashoffset: 1; opacity: 0; }
+  4% { stroke-dashoffset: 1; opacity: 1; }
+  55% { stroke-dashoffset: 0; opacity: 1; }
+  88% { stroke-dashoffset: 0; opacity: 1; }
+  96% { stroke-dashoffset: 0; opacity: 0; }
+}
+@keyframes ks-milestones-eight {
+  0%, 100% { transform: translate(0, 0); }
+  6.25% { transform: translate(53.6px, 38.9px); }
+  12.5% { transform: translate(99px, 55px); }
+  18.75% { transform: translate(129.3px, 38.9px); }
+  25% { transform: translate(140px, 0); }
+  31.25% { transform: translate(129.3px, -38.9px); }
+  37.5% { transform: translate(99px, -55px); }
+  43.75% { transform: translate(53.6px, -38.9px); }
+  50% { transform: translate(0, 0); }
+  56.25% { transform: translate(-53.6px, 38.9px); }
+  62.5% { transform: translate(-99px, 55px); }
+  68.75% { transform: translate(-129.3px, 38.9px); }
+  75% { transform: translate(-140px, 0); }
+  81.25% { transform: translate(-129.3px, -38.9px); }
+  87.5% { transform: translate(-99px, -55px); }
+  93.75% { transform: translate(-53.6px, -38.9px); }
+}
+@keyframes ks-milestones-lean { 0%, 100% { transform: rotate(0deg) translateY(0); } 50% { transform: rotate(6deg) translateY(-4px); } }

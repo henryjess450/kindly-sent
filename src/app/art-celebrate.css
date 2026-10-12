@@ -1,0 +1,41 @@
+/* Keyframes for the "celebrate" covers. Prefix every name with ks-celebrate- */
+
+/* Gift lid pops up, wobbles, lands with a little bounce, then rests. */
+@keyframes ks-celebrate-hop {
+  0%, 60%, 100% { transform: translateY(0) rotate(0deg); }
+  18% { transform: translateY(-58px) rotate(-7deg); }
+  30% { transform: translateY(-62px) rotate(5deg); }
+  44% { transform: translateY(0) rotate(0deg); }
+  52% { transform: translateY(-9px) rotate(0deg); }
+}
+
+/* Endless scroll of a repeating pattern: --sx must equal one pattern period. */
+@keyframes ks-celebrate-slide { from { transform: translateX(0); } to { transform: translateX(var(--sx, -64px)); } }
+
+/* Water ripple that widens and fades, then gathers back. */
+@keyframes ks-celebrate-ripple {
+  0%, 100% { transform: scaleX(0.8); opacity: 0.2; }
+  50% { transform: scaleX(1.12); opacity: 0.7; }
+}
+
+/* Car bumping along the road. */
+@keyframes ks-celebrate-bounce {
+  0%, 50%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-6px); }
+  75% { transform: translateY(-3px); }
+}
+
+/* Rattle shake: a quick jiggle that dies down, then a pause. */
+@keyframes ks-celebrate-shake {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(-12deg); }
+  22% { transform: rotate(10deg); }
+  34% { transform: rotate(-7deg); }
+  46% { transform: rotate(4deg); }
+}
+
+/* Slow sleepy breathing. */
+@keyframes ks-celebrate-breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.03, 1.06); }
+}

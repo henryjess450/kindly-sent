@@ -9,8 +9,9 @@ import type { Design } from "@/lib/designs";
 import type { PublicCard } from "@/lib/cards";
 import { useViewport } from "@/lib/useViewport";
 import { sealLetter } from "@/lib/names";
+import { SendJourney } from "../journey/SendJourney";
 
-type Phase = "drop" | "close" | "seal" | "fly" | "done";
+type Phase = "drop" | "close" | "seal" | "fly" | "journey" | "done";
 
 /** The card slides into its envelope, the flap folds, the seal presses down, and off it goes. */
 export function SendOff({
@@ -39,9 +40,10 @@ export function SendOff({
       setTimeout(() => setPhase("close"), 1100),
       setTimeout(() => setPhase("seal"), 1800),
       setTimeout(() => setPhase("fly"), 2700),
-      setTimeout(() => setPhase("done"), 3500),
+      setTimeout(() => setPhase(edited ? "done" : "journey"), 3400),
     ];
     return () => t.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const when = new Date(result.card.sendAt).toLocaleString("en-CA", {
@@ -54,6 +56,8 @@ export function SendOff({
   });
   const now = result.card.sendAt <= Date.now() + 60_000;
   const letter = sealLetter(content.senderName);
+
+  if (phase === "journey") return <SendJourney recipientName={content.recipientName} seal={design.accent} onDone={() => setPhase("done")} />;
 
   return (
     <div style={{ minHeight: "calc(100vh - 52px)", display: "grid", placeItems: "center", padding: "40px 22px", overflow: "hidden" }}>

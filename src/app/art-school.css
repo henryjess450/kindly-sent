@@ -1,0 +1,21 @@
+/* Keyframes for the "school" covers. Prefix every name with ks-school- */
+/* A stroke (pathLength 1, dasharray "1 1") draws itself, rests, fades, and resets while invisible. */
+@keyframes ks-school-draw {
+  0% { stroke-dashoffset: 1px; opacity: 0; }
+  6% { stroke-dashoffset: 1px; opacity: 1; }
+  55%, 82% { stroke-dashoffset: 0px; opacity: 1; }
+  94% { stroke-dashoffset: 0px; opacity: 0; }
+  100% { stroke-dashoffset: 1px; opacity: 0; }
+}
+/* Moves in step with ks-school-draw (same duration, linear), then slides home while the line fades. */
+@keyframes ks-school-write {
+  0%, 6% { transform: translateX(0); }
+  55%, 82% { transform: translateX(var(--dx, 200px)); }
+  100% { transform: translateX(0); }
+}
+/* Endless slide of a tiled strip; --dx is exactly one tile, so the end looks like the start. */
+@keyframes ks-school-slide { from { transform: translateX(0); } to { transform: translateX(var(--dx, -100px)); } }
+/* A quick hop, then rest; stagger delays so things pop in turn. */
+@keyframes ks-school-pop { 0%, 32%, 100% { transform: translateY(0); } 16% { transform: translateY(var(--rise, -34px)); } }
+/* Dashes travel along a path; --o is one dash period. */
+@keyframes ks-school-dash { from { stroke-dashoffset: 0px; } to { stroke-dashoffset: var(--o, 30px); } }

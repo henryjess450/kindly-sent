@@ -2,6 +2,12 @@ import type { Metadata, Viewport } from "next";
 import { Caveat, Inter, Kalam, Newsreader, Special_Elite } from "next/font/google";
 import { site } from "@/config/site";
 import "./globals.css";
+import "./art-school.css";
+import "./art-family.css";
+import "./art-care.css";
+import "./art-celebrate.css";
+import "./art-milestones.css";
+import "./art-seasons.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const caveat = Caveat({ subsets: ["latin"], variable: "--font-caveat", display: "swap" });

@@ -15,11 +15,18 @@ export type Design = {
 };
 
 export const OCCASIONS = [
-  "Birthday", "Love", "Thank you", "Congratulations", "Holidays", "Just because",
-  "New baby", "Wedding", "Get well", "Thinking of you",
+  "Birthday", "Love", "Anniversary", "Thank you", "Teachers", "Graduation", "Congratulations", "Family", "Friends",
+  "Just because", "Get well", "Thinking of you", "New baby", "Wedding", "New home", "Good luck", "Holidays",
 ] as const;
 
-export const DESIGNS: Design[] = [
+import { DESIGNS as school } from "./design-data/school";
+import { DESIGNS as family } from "./design-data/family";
+import { DESIGNS as care } from "./design-data/care";
+import { DESIGNS as celebrate } from "./design-data/celebrate";
+import { DESIGNS as milestones } from "./design-data/milestones";
+import { DESIGNS as seasons } from "./design-data/seasons";
+
+const ORIGINAL: Design[] = [
   { id: "balloons", name: "Balloons", occasion: "Birthday", paper: "#FFF3E6", ink: "#2B1D14", accent: "#FF5A4E", envelope: "#F4E4D0", effect: "confetti" },
   { id: "cake", name: "One Candle", occasion: "Birthday", paper: "#FDEEEF", ink: "#3A1F27", accent: "#E8577E", envelope: "#F6DCE0", effect: "confetti" },
   { id: "party", name: "Party Hat", occasion: "Birthday", paper: "#E9F4FF", ink: "#14284B", accent: "#2F6FEB", envelope: "#DCE9F7", effect: "confetti" },
@@ -42,6 +49,11 @@ export const DESIGNS: Design[] = [
   { id: "tulip", name: "Tulip", occasion: "Thinking of you", paper: "#F3F1EC", ink: "#2F3B36", accent: "#7A8F84", envelope: "#E6E2D9", effect: "none" },
   { id: "moon", name: "Quiet Moon", occasion: "Thinking of you", paper: "#202A44", ink: "#EEF1F8", accent: "#B8C4E0", envelope: "#E2E5EE", effect: "none" },
 ];
+
+// Newer designs live in ./design-data, one file per group. Shown grouped by occasion.
+export const DESIGNS: Design[] = [...ORIGINAL, ...school, ...family, ...care, ...celebrate, ...milestones, ...seasons].sort(
+  (a, b) => OCCASIONS.indexOf(a.occasion as (typeof OCCASIONS)[number]) - OCCASIONS.indexOf(b.occasion as (typeof OCCASIONS)[number]),
+);
 
 export const getDesign = (id: string) => DESIGNS.find((d) => d.id === id);
 

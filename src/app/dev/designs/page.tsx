@@ -2,15 +2,20 @@ import { notFound } from "next/navigation";
 import { CardArt } from "@/components/CardArt";
 import { DESIGNS } from "@/lib/designs";
 
-// Development only: every design at once.
-export default function Designs() {
+// Development only: every design at once, or a slice with ?from=24&n=24.
+export default async function Designs({ searchParams }: { searchParams: Promise<{ from?: string; n?: string }> }) {
   if (process.env.NODE_ENV === "production") notFound();
+  const { from = "0", n = "200" } = await searchParams;
+  const shown = DESIGNS.slice(Number(from), Number(from) + Number(n));
   return (
-    <main style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 12, padding: 12, background: "#e8e8ed" }}>
-      {DESIGNS.map((d) => (
-        <div key={d.id} style={{ aspectRatio: "5/7", borderRadius: 4, overflow: "hidden" }}>
-          <CardArt design={d} />
-        </div>
+    <main style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 10, padding: 10, background: "#e8e8ed" }}>
+      {shown.map((d) => (
+        <figure key={d.id} style={{ margin: 0 }}>
+          <div style={{ aspectRatio: "5/7", borderRadius: 4, overflow: "hidden" }}>
+            <CardArt design={d} />
+          </div>
+          <figcaption style={{ fontSize: 11, padding: "3px 2px" }}>{d.id} · {d.occasion}</figcaption>
+        </figure>
       ))}
     </main>
   );

@@ -8,8 +8,9 @@ import { Particles } from "./Particles";
 import type { Design } from "@/lib/designs";
 import { useViewport } from "@/lib/useViewport";
 import { sealLetter } from "@/lib/names";
+import { MailboxIntro } from "./journey/MailboxIntro";
 
-type Stage = "sealed" | "unseal" | "rise" | "present" | "open";
+type Stage = "intro" | "sealed" | "unseal" | "rise" | "present" | "open";
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
@@ -40,7 +41,7 @@ export function OpenCard({
   seal?: string;
 }) {
   const vp = useViewport();
-  const [stage, setStage] = useState<Stage>("sealed");
+  const [stage, setStage] = useState<Stage>("intro");
   const book = vp.w >= 760;
   const w = Math.round(book ? Math.min(340, (vp.w - 100) / 2, (vp.h - 190) / 1.4) : Math.min(330, vp.w - 56, (vp.h - 210) / 1.4));
   const ew = Math.round(Math.min(260, vp.w * 0.6)); // card width that fits the envelope
@@ -123,6 +124,8 @@ export function OpenCard({
       </AnimatePresence>
 
       <Particles effect={design.effect} play={stage === "open"} />
+
+      {stage === "intro" && <MailboxIntro recipientName={content.recipientName} seal={design.accent} onDone={() => setStage("sealed")} />}
 
       <style>{`
         .open-stage { position: relative; min-height: 100vh; min-height: 100dvh; overflow: hidden; transition: background-color 1.2s var(--ease-out); }

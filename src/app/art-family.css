@@ -1,0 +1,14 @@
+/* Keyframes for the "family" covers. Prefix every name with ks-family- */
+
+/* Glass tilts in (--tilt), taps, bounces back a touch, then settles upright. */
+@keyframes ks-family-clink { 0%, 100% { transform: rotate(0deg); } 42% { transform: rotate(var(--tilt, 7deg)); } 50% { transform: rotate(calc(var(--tilt, 7deg) * 0.8)); } 58% { transform: rotate(var(--tilt, 7deg)); } 80% { transform: rotate(0deg); } }
+/* A burst that pops in at the halfway mark, then fades out while it grows. */
+@keyframes ks-family-pop { 0%, 40%, 100% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1); opacity: 1; } 68% { transform: scale(1.3); opacity: 0; } }
+/* A small double bump, like a van on a gravel road. */
+@keyframes ks-family-bounce { 0%, 50%, 100% { transform: translateY(0); } 22% { transform: translateY(-5px); } 72% { transform: translateY(-3px); } }
+/* Road dashes slide left by exactly one dash period (40px), so the loop is invisible. */
+@keyframes ks-family-road { from { transform: translateX(0); } to { transform: translateX(-40px); } }
+/* Quick blink near the end of the cycle. */
+@keyframes ks-family-blink { 0%, 88%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.1); } }
+/* Gentle breathing pulse. */
+@keyframes ks-family-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
