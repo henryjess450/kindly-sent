@@ -20,12 +20,14 @@ export function clientPayConfig() {
     mode,
     applicationId: mode === "square" ? process.env.SQUARE_APPLICATION_ID! : "",
     locationId: mode === "square" ? process.env.SQUARE_LOCATION_ID! : "",
-    sandbox: process.env.SQUARE_ENV !== "production",
+    sandbox: squareEnv() !== "production",
   };
 }
 export type ClientPayConfig = ReturnType<typeof clientPayConfig>;
 
-const base = () => (process.env.SQUARE_ENV === "production" ? "https://connect.squareup.com" : "https://connect.squareupsandbox.com");
+// SQUARE_ENVIRONMENT is Coastline's name for it, so its lines can be copied over as-is.
+const squareEnv = () => (process.env.SQUARE_ENV ?? process.env.SQUARE_ENVIRONMENT ?? "sandbox").trim().toLowerCase();
+const base = () => (squareEnv() === "production" ? "https://connect.squareup.com" : "https://connect.squareupsandbox.com");
 
 async function square<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${base()}${path}`, {
