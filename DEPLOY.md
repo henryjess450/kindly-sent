@@ -32,11 +32,17 @@ Set `SITE_URL=https://kindlysent.ca` and the email settings. A Gmail App Passwor
 
 **Payments (Square).** Use a separate Square application from Coastline so the money and reports stay apart (same Square account is fine). In the Square Developer Dashboard: create an app, copy the **Application ID**, **Access token** and **Location ID** into `.env`. Start with `SQUARE_ENV=sandbox` and the sandbox values, buy a card with Square's test card `4111 1111 1111 1111`, then switch to production values. For Apple Pay, register `kindlysent.ca` under the app's Apple Pay settings.
 
-**Gift cards (Tremendous).** Sign up at tremendous.com, then:
-1. Put money in your Tremendous balance (gift cards are paid from it).
-2. Create an API key (sandbox first: testflight.tremendous.com) and set `TREMENDOUS_API_KEY`.
-3. Run `node scripts/gift-catalog.mjs amazon` (and tim, starbucks...) to find each product ID, and paste them into `src/config/gifts.ts`. Brands without an ID are hidden in production.
-4. When it works in sandbox, set `TREMENDOUS_ENV=production` and the production key.
+**Gift cards (Tango Card).** Tango is used because its API hands back the actual card number and PIN, which the site prints inside the card. (Tremendous only gives a redeem link; set `GIFT_PROVIDER=tremendous` if you'd ever rather use it.)
+1. Sign up for Tango Card's API ("Rewards as a Service") and ask for a sandbox. Tell them you're in Canada and need CAD cards with codes returned in the API, not emailed by Tango.
+2. Fund your Tango account (gift cards are paid from that balance).
+3. Put the platform name, platform key, account ID and customer ID in `.env` (`TANGO_*`).
+4. Run `node scripts/gift-catalog.mjs amazon` (and tim, starbucks...) and paste each `tangoUtid` into `src/config/gifts.ts`. Brands without one are hidden on the live site.
+5. Make the encryption key for card numbers and PINs and put it in `GIFT_SECRET_KEY`:
+   ```powershell
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+   **Save a copy somewhere safe** (a password manager). If it's lost, gift codes that haven't been opened yet can't be read.
+6. Test a sandbox order end to end, then set `TANGO_ENV=production` with the production values.
 
 ## 4. Switch to the shared Caddy
 

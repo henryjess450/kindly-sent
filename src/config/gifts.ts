@@ -1,9 +1,10 @@
-// Gift cards people can tuck inside a card. Issued through Tremendous
-// (tremendous.com) when the card is delivered, never before.
+// Gift cards people can tuck inside a card. Bought when the card is delivered,
+// never before, and the card number + PIN are printed inside the card.
 //
-// productId comes from Tremendous's catalog. Run `node scripts/gift-catalog.mjs`
-// with TREMENDOUS_API_KEY set to list them, then paste the IDs here.
-// A brand with no productId only works in development (demo gift links).
+// GIFT_PROVIDER=tango (default): Tango Card returns the real card number and PIN.
+//   tangoUtid comes from `node scripts/gift-catalog.mjs [search]`.
+// GIFT_PROVIDER=tremendous: Tremendous only gives a redeem link (no PIN).
+// A brand with no ID for the active provider is hidden in production.
 
 export type GiftBrand = {
   id: string;
@@ -11,7 +12,8 @@ export type GiftBrand = {
   blurb: string;
   bg: string; // tile colour
   fg: string; // tile text colour
-  productId?: string;
+  tangoUtid?: string; // Tango Card item, e.g. "U123456"
+  tremendousProductId?: string; // Tremendous product(s), comma separated
 };
 
 export const GIFT_BRANDS: GiftBrand[] = [

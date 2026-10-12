@@ -101,6 +101,11 @@ const MIGRATIONS: string[] = [
     issued_at INTEGER
   );
   `,
+  // 3: the gift card's number and PIN, encrypted.
+  `
+  ALTER TABLE gifts ADD COLUMN secret TEXT;
+  ALTER TABLE gifts ADD COLUMN revealed_at INTEGER;
+  `,
 ];
 
 let db: DatabaseSync | undefined;
@@ -196,4 +201,6 @@ export type GiftRow = {
   error: string | null;
   created_at: number;
   issued_at: number | null;
+  secret: string | null;
+  revealed_at: number | null;
 };

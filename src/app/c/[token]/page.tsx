@@ -28,10 +28,9 @@ export default async function CardPage({ params }: { params: Promise<{ token: st
 
   const design = getDesign(card.design) ?? DESIGNS[0];
   const g = getGift(card.id);
-  // The redeem link only ever appears on the recipient's own page.
-  const gift = g && (g.status === "issued" || (isOwner && g.status === "held"))
-    ? { brand: g.brand, amountCents: g.amount_cents, redeemUrl: g.status === "issued" && !isOwner ? g.redeem_url : null }
-    : null;
+  // Only the brand and amount go in the page. The number and PIN come from
+  // /api/open when the recipient taps the seal.
+  const gift = g && (g.status === "issued" || (isOwner && g.status === "held")) ? { brand: g.brand, amountCents: g.amount_cents } : null;
   return (
     <main>
       <div style={{ position: "fixed", top: 16, left: 22, zIndex: 50 }}>

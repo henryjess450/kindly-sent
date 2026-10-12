@@ -11,6 +11,7 @@ import { SendOff } from "./SendOff";
 import { PayForm, type PayHandle } from "./PayForm";
 import { DESIGNS, ENVELOPES, FONTS, INKS, LINERS, OCCASIONS, envelopeColor, getDesign } from "@/lib/designs";
 import { useViewport } from "@/lib/useViewport";
+import { sealLetter } from "@/lib/names";
 import { money, pricing, quote } from "@/config/pricing";
 import type { GiftBrand } from "@/config/gifts";
 import type { PublicCard } from "@/lib/cards";
@@ -59,7 +60,6 @@ function whenLabel(d: Draft) {
   const [hh, mm] = d.time.split(":").map(Number);
   return new Date(y, m - 1, day, hh, mm).toLocaleString("en-CA", { weekday: "long", month: "long", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
 }
-const sealLetter = (name: string) => (name.trim().replace(/^(love|from|xo)[,\s]+/i, "")[0] ?? "K").toUpperCase();
 
 const slide = {
   initial: (dir: number) => ({ opacity: 0, x: dir * 40 }),
@@ -397,7 +397,7 @@ export function Composer({
             {step === "gift" && (
               <div className="form-stack">
                 <h1 className="display display-m">Tuck in a gift?</h1>
-                <p className="lede" style={{ fontSize: 19, margin: 0 }}>A digital gift card slides out when they open the card. It&apos;s bought the moment the card arrives, so cancelling is always a full refund.</p>
+                <p className="lede" style={{ fontSize: 19, margin: 0 }}>We buy the gift card the moment your card arrives and print its number and PIN inside, ready to use in store or online. Cancel before then for a full refund.</p>
                 <div className="brand-grid">
                   <button className="brand-tile none" aria-pressed={!d.gift} onClick={() => set("gift", null)}>
                     <strong>No gift</strong>

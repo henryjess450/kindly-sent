@@ -10,6 +10,7 @@ import type { GiftBrand } from "@/config/gifts";
 import { GiftTile } from "../GiftTile";
 import type { PublicCard } from "@/lib/cards";
 import { useViewport } from "@/lib/useViewport";
+import { sealLetter } from "@/lib/names";
 
 type Phase = "drop" | "close" | "seal" | "fly" | "done";
 
@@ -56,7 +57,7 @@ export function SendOff({
     minute: "2-digit",
   });
   const now = result.card.sendAt <= Date.now() + 60_000;
-  const letter = (content.senderName.trim().replace(/^(love|from|xo)[,\s]+/i, "")[0] ?? "K").toUpperCase();
+  const letter = sealLetter(content.senderName);
 
   return (
     <div style={{ minHeight: "calc(100vh - 52px)", display: "grid", placeItems: "center", padding: "40px 22px", overflow: "hidden" }}>

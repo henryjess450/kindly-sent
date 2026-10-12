@@ -4,15 +4,13 @@ import { money } from "@/config/pricing";
 import type { CardRow, GiftRow, PaymentRow } from "./db";
 import { getDesign, DESIGNS, envelopeColor } from "./designs";
 import { formatWhen } from "./time";
+import { plainName } from "./names";
+export { plainName };
 
 // Plain HTML emails with inline styles, so Gmail, Outlook and Apple Mail agree.
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-
-/** "Love, Henry" -> "Henry" for subject lines and sentences. */
-export const plainName = (signOff: string) =>
-  signOff.trim().replace(/^(with love|love|lots of love|from|xo+|xoxo|cheers|best|yours|hugs|warmly)[,!.\s]+/i, "").trim() || signOff.trim();
 
 const FONT = `-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Helvetica, Arial, sans-serif`;
 

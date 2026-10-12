@@ -256,7 +256,7 @@ export function Gifts() {
           <p className="eyebrow">Gift cards</p>
           <h2 className="display display-l">Tuck a gift inside.</h2>
           <p className="lede" style={{ marginTop: 16 }}>
-            Add a gift card from Amazon, Tim Hortons, Starbucks, Indigo and more. It slides out when they open the card, ready to use.
+            Add a gift card from Amazon, Tim Hortons, Starbucks, Indigo and more. Its card number and PIN are printed inside the card, ready to use the moment they open it.
           </p>
           <p className="muted" style={{ marginTop: 14, fontSize: 15 }}>
             We buy it the moment the card is delivered, so if plans change, cancelling is a full refund.

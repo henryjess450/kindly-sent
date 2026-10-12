@@ -2,9 +2,10 @@ import type { GiftBrand } from "@/config/gifts";
 import { money } from "@/config/pricing";
 
 /** A gift card drawn like the plastic thing: brand, amount, chip of colour. No logos. */
-export function GiftTile({ brand, amountCents, width = 260, from }: { brand: GiftBrand; amountCents?: number; width?: number; from?: string }) {
+export function GiftTile({ brand, amountCents, width = 260, from }: { brand: GiftBrand; amountCents?: number; width?: number | string; from?: string }) {
+  const w = typeof width === "number" ? `${width}px` : width;
   return (
-    <div className="gift-tile" style={{ width, background: brand.bg, color: brand.fg, ["--gw" as string]: `${width}px` }}>
+    <div className="gift-tile" style={{ width: w, background: brand.bg, color: brand.fg, ["--gw" as string]: w }}>
       <div className="gift-sheen" />
       <div className="gift-top">
         <span className="gift-brand">{brand.name}</span>
