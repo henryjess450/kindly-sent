@@ -1,8 +1,6 @@
 import { site } from "@/config/site";
-import { pricing } from "@/config/pricing";
-import { getDb, type CardRow, type GiftRow, type UserRow } from "./db";
+import { getDb, type CardRow, type UserRow } from "./db";
 import { ENVELOPES, getDesign, INKS, isFontId, isOption, LINERS } from "./designs";
-import { availableBrands } from "./giftcards";
 import { newId, newToken } from "./ids";
 import { normalizeEmail } from "./session";
 import { isValidZone, zonedToUtc } from "./time";
@@ -24,19 +22,6 @@ export type CardInput = {
   liner: string;
 };
 
-export type GiftInput = { brand: string; amountCents: number } | null;
-
-/** Checks the optional gift card. */
-export function parseGift(body: Record<string, unknown>): { ok: true; gift: GiftInput } | { ok: false; error: string } {
-  const g = body.gift as { brand?: unknown; amountCents?: unknown } | null | undefined;
-  if (!g || !g.brand) return { ok: true, gift: null };
-  const brand = availableBrands().find((b) => b.id === g.brand);
-  if (!brand) return { ok: false, error: "That gift card isn't available right now." };
-  const cents = Math.round(Number(g.amountCents));
-  if (!Number.isFinite(cents) || cents < pricing.gift.minCents || cents > pricing.gift.maxCents || cents % 100 !== 0)
-    return { ok: false, error: `Gift amounts are whole dollars from $${pricing.gift.minCents / 100} to $${pricing.gift.maxCents / 100}.` };
-  return { ok: true, gift: { brand: brand.id, amountCents: cents } };
-}
 
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\r\n/g, "\n").trim().slice(0, max) : "");
 
@@ -109,12 +94,6 @@ export function insertCard(
   return getCard(id)!;
 }
 
-export function insertGift(cardId: string, gift: NonNullable<GiftInput>) {
-  getDb()
-    .prepare("INSERT INTO gifts (id, card_id, brand, amount_cents, status, created_at) VALUES (?, ?, ?, ?, 'held', ?)")
-    .run(newId(), cardId, gift.brand, gift.amountCents, Date.now());
-}
-
 export function updateCard(id: string, c: CardInput, sendAt: number) {
   getDb()
     .prepare(
@@ -140,15 +119,13 @@ export function listCards(userId: string) {
     .all(userId) as CardRow[];
 }
 
-/** What the composer and dashboard need, without internal fields. Never includes the redeem link. */
+/** What the composer and dashboard need, without internal fields. */
 export function publicCard(c: CardRow) {
-  const g = getDb().prepare("SELECT * FROM gifts WHERE card_id = ?").get(c.id) as GiftRow | undefined;
   return {
     ink: c.ink,
     envelope: c.envelope,
     liner: c.liner,
     priceCents: c.price_cents,
-    gift: g ? { brand: g.brand, amountCents: g.amount_cents, status: g.status } : null,
     id: c.id,
     token: c.token,
     design: c.design,

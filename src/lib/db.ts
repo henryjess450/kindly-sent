@@ -101,7 +101,8 @@ const MIGRATIONS: string[] = [
     issued_at INTEGER
   );
   `,
-  // 3: the gift card's number and PIN, encrypted.
+  // 3: the gift card's number and PIN, encrypted. (Gift cards were removed;
+  // the gifts table stays so existing databases keep migrating cleanly.)
   `
   ALTER TABLE gifts ADD COLUMN secret TEXT;
   ALTER TABLE gifts ADD COLUMN revealed_at INTEGER;

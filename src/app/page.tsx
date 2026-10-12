@@ -1,6 +1,6 @@
 import { Footer, Nav } from "@/components/Nav";
 import { HeroScroll } from "@/components/landing/HeroScroll";
-import { EveryYear, FinalCta, Gallery, Gifts, HowItWorks, Notifications, Pricing } from "@/components/landing/Sections";
+import { EveryYear, FinalCta, Gallery, HowItWorks, Notifications, Pricing } from "@/components/landing/Sections";
 
 export default function Home() {
   return (
@@ -10,7 +10,6 @@ export default function Home() {
         <HeroScroll />
         <Gallery />
         <HowItWorks />
-        <Gifts />
         <EveryYear />
         <Notifications />
         <Pricing />

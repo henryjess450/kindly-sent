@@ -4,7 +4,6 @@ import { Nav } from "@/components/Nav";
 import { Composer } from "@/components/composer/Composer";
 import { ownedCard, publicCard } from "@/lib/cards";
 import { getUser } from "@/lib/session";
-import { availableBrands } from "@/lib/giftcards";
 import { clientPayConfig } from "@/lib/payments";
 
 export const metadata: Metadata = { title: "Write a card" };
@@ -21,7 +20,7 @@ export default async function SendPage({ searchParams }: { searchParams: Promise
   return (
     <>
       <Nav />
-      <Composer signedInEmail={user?.email ?? null} defaultName={user?.name ?? ""} initialDesign={design} editCard={editCard} brands={availableBrands()} pay={clientPayConfig()} />
+      <Composer signedInEmail={user?.email ?? null} defaultName={user?.name ?? ""} initialDesign={design} editCard={editCard} pay={clientPayConfig()} />
     </>
   );
 }

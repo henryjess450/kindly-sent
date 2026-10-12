@@ -45,7 +45,6 @@ export function Card3D({
   mode = "book",
   width,
   className,
-  insideLeft,
 }: {
   design: Design;
   content: CardContent;
@@ -53,8 +52,6 @@ export function Card3D({
   mode?: "book" | "flip";
   width: number | string;
   className?: string;
-  /** Printed on the back of the cover, the left page when the card is open. */
-  insideLeft?: React.ReactNode;
 }) {
   const w = typeof width === "number" ? `${width}px` : width;
   return (
@@ -70,14 +67,7 @@ export function Card3D({
             <CardArt design={design} />
           </div>
           <div className="ks-face ks-face-back">
-            {mode === "flip" ? (
-              <CardMessage design={design} content={content} />
-            ) : (
-              <>
-                <div className="fold" />
-                {insideLeft}
-              </>
-            )}
+            {mode === "flip" ? <CardMessage design={design} content={content} /> : <div className="fold" />}
           </div>
         </div>
       </div>

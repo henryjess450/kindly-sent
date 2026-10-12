@@ -6,14 +6,12 @@ import { AnimatePresence, motion } from "motion/react";
 import { Card3D } from "../Card3D";
 import { CardArt } from "../CardArt";
 import { Envelope } from "../Envelope";
-import { GiftTile } from "../GiftTile";
 import { SendOff } from "./SendOff";
 import { PayForm, type PayHandle } from "./PayForm";
 import { DESIGNS, ENVELOPES, FONTS, INKS, LINERS, OCCASIONS, envelopeColor, getDesign } from "@/lib/designs";
 import { useViewport } from "@/lib/useViewport";
 import { sealLetter } from "@/lib/names";
 import { money, pricing, quote } from "@/config/pricing";
-import type { GiftBrand } from "@/config/gifts";
 import type { PublicCard } from "@/lib/cards";
 import type { ClientPayConfig } from "@/lib/payments";
 
@@ -33,11 +31,11 @@ type Draft = {
   repeat: "none" | "yearly";
   sendNow: boolean;
   email: string;
-  gift: { brand: string; amountCents: number } | null;
 };
 
-type StepId = "card" | "message" | "envelope" | "gift" | "delivery" | "pay";
-const LABELS: Record<StepId, string> = { card: "Card", message: "Message", envelope: "Envelope", gift: "Gift", delivery: "Delivery", pay: "Pay" };
+type StepId = "card" | "message" | "envelope" | "delivery" | "pay";
+const LABELS: Record<StepId, string> = { card: "Card", message: "Message", envelope: "Envelope", delivery: "Delivery", pay: "Pay" };
+const STEPS: StepId[] = ["card", "message", "envelope", "delivery", "pay"];
 const MAX = 1200;
 const DRAFT_KEY = "ks-draft-v2";
 
@@ -72,22 +70,17 @@ export function Composer({
   defaultName,
   initialDesign,
   editCard,
-  brands,
   pay,
 }: {
   signedInEmail: string | null;
   defaultName: string;
   initialDesign?: string;
   editCard?: PublicCard;
-  brands: GiftBrand[];
   pay: ClientPayConfig;
 }) {
   const vp = useViewport();
   const needsPay = !editCard || editCard.status === "unpaid";
-  const steps = useMemo<StepId[]>(
-    () => (editCard ? ["card", "message", "envelope", "delivery", "pay"] : ["card", "message", "envelope", ...(brands.length ? ["gift" as const] : []), "delivery", "pay"]),
-    [editCard, brands.length],
-  );
+  const steps = STEPS;
   const [i, setI] = useState(editCard || initialDesign ? 1 : 0);
   const step = steps[i];
   const [dir, setDir] = useState(1);
@@ -113,7 +106,6 @@ export function Composer({
     repeat: editCard?.repeat ?? "none",
     sendNow: false,
     email: "",
-    gift: null,
   }));
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => {
     setError("");
@@ -150,11 +142,10 @@ export function Composer({
 
   const design = getDesign(d.design)!;
   const envColor = envelopeColor(design, d.envelope);
-  const brand = d.gift ? brands.find((b) => b.id === d.gift!.brand) : undefined;
-  const q = quote(editCard ? 0 : d.gift?.amountCents ?? 0);
+  const q = quote();
   const book = vp.w >= 980;
   const previewW = book ? Math.min(250, (vp.w / 2 - 120) / 2, (vp.h - 220) / 1.4) : Math.min(230, vp.w * 0.55, (vp.h * 0.42) / 1.4);
-  const open = peek ?? (step === "message" || step === "gift");
+  const open = peek ?? step === "message";
   const showEnvelope = step === "envelope" || step === "delivery" || step === "pay";
 
   function validate(s: StepId): string {
@@ -167,8 +158,6 @@ export function Composer({
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.recipientEmail.trim())) return "Check their email address.";
       if (!d.sendNow && (!d.date || !d.time)) return "Pick a delivery date and time.";
     }
-    if (s === "gift" && d.gift && (d.gift.amountCents < pricing.gift.minCents || d.gift.amountCents > pricing.gift.maxCents))
-      return `Gift amounts are ${money(pricing.gift.minCents)} to ${money(pricing.gift.maxCents)}.`;
     return "";
   }
 
@@ -210,7 +199,7 @@ export function Composer({
     }
   }
 
-  if (result) return <SendOff design={design} envelope={envColor} liner={d.liner} content={d} result={result} edited={!!editCard && editCard.status !== "unpaid"} brand={brand} />;
+  if (result) return <SendOff design={design} envelope={envColor} liner={d.liner} content={d} result={result} edited={!!editCard && editCard.status !== "unpaid"} />;
 
   const shown = DESIGNS.filter((x) => occasion === "All" || x.occasion === occasion);
 
@@ -241,20 +230,6 @@ export function Composer({
             ) : (
               <motion.div key={`card-${d.design}`} initial={{ opacity: 0, scale: 0.94, rotate: -2 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ type: "spring", stiffness: 200, damping: 22 }} style={{ position: "relative" }}>
                 <Card3D design={design} content={d} open={open} mode={book ? "book" : "flip"} width={previewW} />
-                <AnimatePresence>
-                  {step === "gift" && brand && d.gift && (
-                    <motion.div
-                      key={brand.id + d.gift.amountCents}
-                      initial={{ y: 80, opacity: 0, rotate: 4 }}
-                      animate={{ y: 0, opacity: 1, rotate: -5 }}
-                      exit={{ y: 60, opacity: 0 }}
-                      transition={{ type: "spring", stiffness: 220, damping: 18 }}
-                      style={{ position: "absolute", right: book ? -previewW * 0.75 : -previewW * 0.1, bottom: -previewW * 0.18, zIndex: 5 }}
-                    >
-                      <GiftTile brand={brand} amountCents={d.gift.amountCents} width={previewW * 0.82} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>
@@ -394,59 +369,6 @@ export function Composer({
               </div>
             )}
 
-            {step === "gift" && (
-              <div className="form-stack">
-                <h1 className="display display-m">Tuck in a gift?</h1>
-                <p className="lede" style={{ fontSize: 19, margin: 0 }}>We buy the gift card the moment your card arrives and print its number and PIN inside, ready to use in store or online. Cancel before then for a full refund.</p>
-                <div className="brand-grid">
-                  <button className="brand-tile none" aria-pressed={!d.gift} onClick={() => set("gift", null)}>
-                    <strong>No gift</strong>
-                    <span>Just the card</span>
-                  </button>
-                  {brands.map((b) => (
-                    <button
-                      key={b.id}
-                      className="brand-tile"
-                      aria-pressed={d.gift?.brand === b.id}
-                      onClick={() => set("gift", { brand: b.id, amountCents: d.gift?.amountCents ?? pricing.gift.presetsCents[1] })}
-                      style={{ background: b.bg, color: b.fg }}
-                    >
-                      <strong>{b.name}</strong>
-                      <span>{b.blurb}</span>
-                    </button>
-                  ))}
-                </div>
-                <AnimatePresence initial={false}>
-                  {d.gift && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
-                      <div className="field" style={{ paddingTop: 4 }}>
-                        <span className="label">Amount</span>
-                        <div className="chips">
-                          {pricing.gift.presetsCents.map((c) => (
-                            <button key={c} className="chip" aria-pressed={d.gift?.amountCents === c} onClick={() => set("gift", { ...d.gift!, amountCents: c })}>{money(c)}</button>
-                          ))}
-                          <div className="amount-input">
-                            <span>$</span>
-                            <input
-                              inputMode="numeric"
-                              aria-label="Custom amount"
-                              placeholder="Other"
-                              value={pricing.gift.presetsCents.includes(d.gift.amountCents) ? "" : String(d.gift.amountCents / 100)}
-                              onChange={(e) => {
-                                const v = parseInt(e.target.value.replace(/\D/g, "") || "0", 10);
-                                set("gift", { ...d.gift!, amountCents: Math.min(v, pricing.gift.maxCents / 100) * 100 });
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <span className="hint">{money(pricing.gift.minCents)} to {money(pricing.gift.maxCents)}, whole dollars.</span>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
-
             {step === "delivery" && (
               <div className="form-stack">
                 <h1 className="display display-m">When should it arrive?</h1>
@@ -514,8 +436,6 @@ export function Composer({
                       <tbody>
                         <tr><td>Card, sealed and delivered</td><td>{money(q.card)}</td></tr>
                         {q.cardTax > 0 && <tr><td>Tax</td><td>{money(q.cardTax)}</td></tr>}
-                        {brand && <tr><td>{brand.name} gift card</td><td>{money(q.gift)}</td></tr>}
-                        {q.giftFee > 0 && <tr><td>Gift service fee</td><td>{money(q.giftFee)}</td></tr>}
                         <tr className="total"><td>Total</td><td>{money(q.total)}</td></tr>
                       </tbody>
                     </table>
@@ -598,15 +518,6 @@ export function Composer({
         .liner-chip { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 8px; cursor: pointer; display: grid; justify-items: center; gap: 4px; }
         .liner-chip small { font-size: 11px; font-weight: 600; color: var(--ink-3); }
         .liner-chip[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
-        .brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-        .brand-tile { aspect-ratio: 1.586; border: 0; border-radius: 12px; padding: 12px; text-align: left; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 4px 12px rgba(0,0,0,.08); transition: transform .3s var(--ease-out), box-shadow .3s; outline: 3px solid transparent; outline-offset: 3px; }
-        .brand-tile strong { font-family: var(--font-display); font-size: 16px; letter-spacing: -0.02em; line-height: 1.15; }
-        .brand-tile span { font-size: 12px; opacity: .75; }
-        .brand-tile:hover { transform: translateY(-3px); }
-        .brand-tile[aria-pressed="true"] { outline-color: var(--ink); }
-        .brand-tile.none { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
-        .amount-input { display: flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 980px; padding: 0 12px; height: 36px; background: var(--surface); }
-        .amount-input input { border: 0; outline: 0; width: 60px; font-size: 14px; background: transparent; }
         .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 14px; }
         .summary { margin: 0; display: grid; border-top: 1px solid var(--line-soft); }
         .summary > div { display: grid; grid-template-columns: 90px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line-soft); }

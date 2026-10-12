@@ -1,11 +1,9 @@
 import { existsSync, readdirSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import { getDb, type CardRow, type UserRow } from "./db";
-import { cardArrivedEmail, deliveredEmail, failedEmail, giftProblemEmail, renewEmail } from "./emails";
+import { cardArrivedEmail, deliveredEmail, failedEmail, renewEmail } from "./emails";
 import { sendMail } from "./mail";
 import { insertCard } from "./cards";
-import { getGift, issueGift } from "./giftcards";
-import { getPayment, refund } from "./payments";
 import { quote } from "@/config/pricing";
 import { nextYearDate, zonedToUtc } from "./time";
 
@@ -73,24 +71,7 @@ async function deliver(card: CardRow) {
     card.sender_email ?? (card.user_id ? (db.prepare("SELECT email FROM users WHERE id = ?").get(card.user_id) as Pick<UserRow, "email"> | undefined)?.email : undefined);
   const attempts = card.attempts + 1;
   try {
-    // Buy the gift card first. If that keeps failing, send the card without it and refund the gift.
-    let gift = getGift(card.id);
-    if (gift?.status === "held") {
-      try {
-        await issueGift(gift, card);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        db.prepare("UPDATE gifts SET error = ? WHERE id = ?").run(message, gift.id);
-        if (attempts < MAX_ATTEMPTS - 1) throw err;
-        db.prepare("UPDATE gifts SET status = 'failed' WHERE id = ?").run(gift.id);
-        const pay = getPayment(card.payment_id);
-        const refundCents = pay ? pay.gift_cents + pay.fee_cents : 0;
-        if (pay) await refund(pay, refundCents, "gift-failed").catch((e) => console.error("[refund]", e));
-        if (senderEmail) await sendMail({ to: senderEmail, ...giftProblemEmail(card, gift) }).catch(() => {});
-      }
-      gift = getGift(card.id);
-    }
-    await sendMail({ to: card.recipient_email, ...cardArrivedEmail(card, gift) });
+    await sendMail({ to: card.recipient_email, ...cardArrivedEmail(card) });
     db.prepare("UPDATE cards SET status = 'sent', sent_at = ?, last_error = NULL WHERE id = ?").run(Date.now(), card.id);
     if (card.repeat === "yearly") scheduleNextYear(card, senderEmail);
     if (senderEmail) await sendMail({ to: senderEmail, ...deliveredEmail(card) }).catch(() => {});
@@ -111,7 +92,7 @@ async function deliver(card: CardRow) {
 function scheduleNextYear(card: CardRow, senderEmail: string | undefined) {
   if (!senderEmail) return;
   const date = nextYearDate(card.local_date);
-  const q = quote(0);
+  const q = quote();
   insertCard(
     {
       design: card.design, font: card.font, ink: card.ink, envelope: card.envelope, liner: card.liner, message: card.message,

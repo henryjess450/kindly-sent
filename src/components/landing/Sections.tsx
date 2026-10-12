@@ -6,8 +6,6 @@ import { motion, useInView, AnimatePresence } from "motion/react";
 import { CardArt } from "../CardArt";
 import { Envelope } from "../Envelope";
 import { DESIGNS, getDesign } from "@/lib/designs";
-import { GiftTile } from "../GiftTile";
-import { GIFT_BRANDS } from "@/config/gifts";
 import { money, pricing } from "@/config/pricing";
 
 const rise = {
@@ -243,48 +241,6 @@ export function FinalCta() {
         <p className="lede" style={{ margin: "16px auto 30px", maxWidth: 520 }}>Write it while you&apos;re thinking of them. Two minutes and {money(pricing.cardCents)}.</p>
         <Link href="/send" className="btn btn-brand">Write a card</Link>
       </motion.div>
-    </section>
-  );
-}
-
-export function Gifts() {
-  const fan = GIFT_BRANDS.slice(1, 6);
-  return (
-    <section className="section" style={{ overflow: "hidden" }}>
-      <div className="wrap gifts-grid">
-        <motion.div {...rise}>
-          <p className="eyebrow">Gift cards</p>
-          <h2 className="display display-l">Tuck a gift inside.</h2>
-          <p className="lede" style={{ marginTop: 16 }}>
-            Add a gift card from Amazon, Tim Hortons, Starbucks, Indigo and more. Its card number and PIN are printed inside the card, ready to use the moment they open it.
-          </p>
-          <p className="muted" style={{ marginTop: 14, fontSize: 15 }}>
-            We buy it the moment the card is delivered, so if plans change, cancelling is a full refund.
-          </p>
-        </motion.div>
-        <div className="fan">
-          {fan.map((b, i) => (
-            <motion.div
-              key={b.id}
-              className="fan-card"
-              initial={{ opacity: 0, y: 120, rotate: 0 }}
-              whileInView={{ opacity: 1, y: 0, rotate: (i - 2) * 9 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ type: "spring", stiffness: 120, damping: 16, delay: 0.1 + i * 0.09 }}
-              style={{ zIndex: i, x: (i - 2) * 46 }}
-            >
-              <GiftTile brand={b} amountCents={[2500, 5000, 1000, 2500, 10000][i]} width={230} />
-            </motion.div>
-          ))}
-        </div>
-      </div>
-      <style>{`
-        .gifts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
-        @media (max-width: 860px) { .gifts-grid { grid-template-columns: 1fr; } }
-        .fan { position: relative; height: 320px; display: grid; place-items: center; }
-        .fan-card { position: absolute; transform-origin: 50% 160%; }
-        @media (max-width: 480px) { .fan { transform: scale(.8); } }
-      `}</style>
     </section>
   );
 }

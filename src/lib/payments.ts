@@ -72,7 +72,7 @@ function friendly(code?: string) {
   }
 }
 
-export type Charge = { cardCents: number; taxCents: number; giftCents: number; feeCents: number; totalCents: number };
+export type Charge = { cardCents: number; taxCents: number; totalCents: number };
 
 /** Charges once per idempotency key, records it, and returns the payment. */
 export async function charge(opts: { sourceId: string; key: string; email: string; note: string; amounts: Charge }): Promise<PaymentRow> {
@@ -103,7 +103,7 @@ export async function charge(opts: { sourceId: string; key: string; email: strin
       `INSERT INTO payments (id, provider, provider_payment_id, email, amount_cents, card_cents, tax_cents, gift_cents, fee_cents, receipt_url, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-    .run(id, mode, providerId, opts.email, a.totalCents, a.cardCents, a.taxCents, a.giftCents, a.feeCents, receipt, Date.now());
+    .run(id, mode, providerId, opts.email, a.totalCents, a.cardCents, a.taxCents, 0, 0, receipt, Date.now());
   return getPayment(id)!;
 }
 

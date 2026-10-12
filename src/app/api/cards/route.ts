@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { quote } from "@/config/pricing";
 import { site } from "@/config/site";
-import { cardsCreatedToday, getCard, insertCard, insertGift, parseCard, parseGift, publicCard } from "@/lib/cards";
+import { cardsCreatedToday, getCard, insertCard, parseCard, publicCard } from "@/lib/cards";
 import { getDb } from "@/lib/db";
 import { receiptEmail } from "@/lib/emails";
-import { getGift } from "@/lib/giftcards";
 import { sendMail } from "@/lib/mail";
 import { charge, PaymentError } from "@/lib/payments";
 import { createLoginLink, getUser, normalizeEmail } from "@/lib/session";
@@ -15,8 +14,6 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const parsed = parseCard(body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
-  const gift = parseGift(body);
-  if (!gift.ok) return NextResponse.json({ error: gift.error }, { status: 400 });
   const user = await getUser();
   const email = user?.email ?? normalizeEmail(body.email);
   if (!email) return NextResponse.json({ error: "Add your email for the receipt." }, { status: 400 });
@@ -25,9 +22,8 @@ export async function POST(req: Request) {
   const sourceId = typeof body.paymentToken === "string" ? body.paymentToken : "";
   if (!sourceId) return NextResponse.json({ error: "Add a payment method." }, { status: 400 });
 
-  const q = quote(gift.gift?.amountCents ?? 0);
+  const q = quote();
   const card = insertCard(parsed.card, parsed.sendAt, { userId: user?.id ?? null, email }, { status: "unpaid", priceCents: q.card + q.cardTax });
-  if (gift.gift) insertGift(card.id, gift.gift);
 
   let payment;
   try {
@@ -35,8 +31,8 @@ export async function POST(req: Request) {
       sourceId,
       key: card.id,
       email,
-      note: `Card to ${parsed.card.recipientName}${gift.gift ? ` + ${gift.gift.brand} gift` : ""}`,
-      amounts: { cardCents: q.card, taxCents: q.cardTax, giftCents: q.gift, feeCents: q.giftFee, totalCents: q.total },
+      note: `Card to ${parsed.card.recipientName}`,
+      amounts: { cardCents: q.card, taxCents: q.cardTax, totalCents: q.total },
     });
   } catch (err) {
     getDb().prepare("DELETE FROM cards WHERE id = ?").run(card.id);
@@ -49,7 +45,7 @@ export async function POST(req: Request) {
   const saved = getCard(card.id)!;
   // Signed in: link straight to the list. Not signed in: the link signs them in too.
   const manage = user ? `${site.url}/cards` : (createLoginLink(email, { next: "/cards" }) ?? `${site.url}/signin`);
-  await sendMail({ to: email, ...receiptEmail(saved, payment, getGift(card.id), manage) }).catch((e) => console.error("[receipt]", e));
+  await sendMail({ to: email, ...receiptEmail(saved, payment, manage) }).catch((e) => console.error("[receipt]", e));
   if (parsed.card.sendNow) void tick();
   return NextResponse.json({ status: "scheduled", card: publicCard(saved) });
 }

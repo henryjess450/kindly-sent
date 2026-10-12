@@ -7,7 +7,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { CardArt } from "@/components/CardArt";
 import { getDesign, DESIGNS } from "@/lib/designs";
 import type { PublicCard } from "@/lib/cards";
-import { getGiftBrand } from "@/config/gifts";
 import { money } from "@/config/pricing";
 
 function status(c: PublicCard) {
@@ -69,7 +68,6 @@ export function CardList({ cards, email, name, notifyOpen, confirmed }: { cards:
     const d = getDesign(c.design) ?? DESIGNS[0];
     const s = status(c);
     const editable = ["pending", "unpaid", "scheduled", "failed"].includes(c.status);
-    const gb = c.gift ? getGiftBrand(c.gift.brand) : undefined;
     return (
       <motion.li key={c.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -40, transition: { duration: 0.3 } }} transition={{ duration: 0.5, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }} className="card-row">
         <Link href={`/c/${c.token}`} className="card-thumb" aria-label={`Preview card to ${c.recipientName}`}>
@@ -80,9 +78,6 @@ export function CardList({ cards, email, name, notifyOpen, confirmed }: { cards:
             <strong>{c.recipientName}</strong>
             <span className={`pill pill-${s.cls}`}>{s.label}</span>
             {c.repeat === "yearly" && <span className="pill pill-sending">Every year</span>}
-            {gb && c.gift && c.gift.status !== "refunded" && (
-              <span className="pill" style={{ background: gb.bg, color: gb.fg }}>{money(c.gift.amountCents)} {gb.name}</span>
-            )}
           </div>
           <div className="muted" style={{ fontSize: 15 }}>
             {c.status === "sent" ? `Delivered ${when(c)}` : `${when(c)} · ${countdown(c.sendAt)}`}

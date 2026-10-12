@@ -6,8 +6,6 @@ import { motion } from "motion/react";
 import { CardArt } from "../CardArt";
 import { Envelope } from "../Envelope";
 import type { Design } from "@/lib/designs";
-import type { GiftBrand } from "@/config/gifts";
-import { GiftTile } from "../GiftTile";
 import type { PublicCard } from "@/lib/cards";
 import { useViewport } from "@/lib/useViewport";
 import { sealLetter } from "@/lib/names";
@@ -22,12 +20,10 @@ export function SendOff({
   edited,
   envelope,
   liner,
-  brand,
 }: {
   design: Design;
   envelope: string;
   liner: string;
-  brand?: GiftBrand;
   content: { senderName: string; recipientName: string };
   result: { status: "pending" | "scheduled"; card: PublicCard };
   edited: boolean;
@@ -77,16 +73,6 @@ export function SendOff({
               >
                 <CardArt design={design} />
               </motion.div>
-              {brand && result.card.gift && (
-                <motion.div
-                  initial={{ y: -w * 1.6, rotate: -90, opacity: 0 }}
-                  animate={{ y: phase === "drop" ? [-w * 1.6, -w * 1.6, -w * 0.1] : -w * 0.1, rotate: -90, opacity: 1 }}
-                  transition={{ duration: 1, times: [0, 0.45, 1], ease: [0.65, 0, 0.35, 1] }}
-                  style={{ position: "absolute", left: "50%", top: "50%", marginLeft: -w * 0.32, marginTop: -w * 0.2 }}
-                >
-                  <GiftTile brand={brand} amountCents={result.card.gift.amountCents} width={w * 0.64} />
-                </motion.div>
-              )}
             </div>
           </Envelope>
         </motion.div>
@@ -107,8 +93,7 @@ export function SendOff({
             <>
               <h1 className="display display-m">{edited ? "Changes saved." : now ? "On its way." : "Sealed and scheduled."}</h1>
               <p className="lede" style={{ margin: "14px 0 30px" }}>
-                {now ? `${result.card.recipientName} will have it in a moment.` : `${result.card.recipientName} gets it ${when}.`}
-                {brand && result.card.gift ? ` Your ${brand.name} gift card is tucked inside.` : ""} We&apos;ve emailed your receipt and we&apos;ll let you know when it lands.
+                {now ? `${result.card.recipientName} will have it in a moment.` : `${result.card.recipientName} gets it ${when}.`} We&apos;ve emailed your receipt and we&apos;ll let you know when it lands.
               </p>
               <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
                 <Link href="/cards" className="btn btn-primary">See your cards</Link>
