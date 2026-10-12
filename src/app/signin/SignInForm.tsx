@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
-export function SignInForm({ expired }: { expired: boolean }) {
+export function SignInForm({ expired, next }: { expired: boolean; next?: string }) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "busy" | "sent">("idle");
   const [error, setError] = useState(expired ? "That link expired or was already used. Get a fresh one below." : "");
@@ -12,7 +12,7 @@ export function SignInForm({ expired }: { expired: boolean }) {
     e.preventDefault();
     setState("busy");
     setError("");
-    const res = await fetch("/api/auth/request", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email }) });
+    const res = await fetch("/api/auth/request", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ email, next }) });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
       setError(json.error ?? "Something went wrong.");

@@ -4,14 +4,14 @@ import { OpenCard } from "@/components/OpenCard";
 import { BrandMark } from "@/components/Nav";
 import { getCardByToken } from "@/lib/cards";
 import { getDesign, DESIGNS, envelopeColor } from "@/lib/designs";
-import { getUser } from "@/lib/session";
+import { getUser, isAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "You have a card", robots: { index: false, follow: false } };
 
 export default async function CardPage({ params }: { params: Promise<{ token: string }> }) {
   const card = getCardByToken((await params).token);
   const user = await getUser();
-  const isOwner = !!card && !!user && card.user_id === user.id;
+  const isOwner = !!card && !!user && (card.user_id === user.id || isAdmin(user));
 
   if (!card || card.status === "canceled" || (card.status !== "sent" && !isOwner)) {
     return (

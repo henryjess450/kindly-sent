@@ -86,4 +86,5 @@ Fill these into `C:\kindly-sent\.env`, then `docker compose up -d` to apply:
 
 - **Email**: `SMTP_*` and `MAIL_FROM`. A Gmail App Password works, like Coastline.
 - **Payments**: a separate Square app (same Square account is fine). Copy the Application ID, Access token and Location ID into `SQUARE_*`. Test with `SQUARE_ENV=sandbox` and Square's test card `4111 1111 1111 1111`, then switch to production values. For Apple Pay, register `kindlysent.ca` in the app's Apple Pay settings.
-- **Admin**: `ADMIN_EMAILS` (your email).
+- **Admin**: `ADMIN_EMAILS` (your email, comma-separated for more than one). Sign in with that email and open `/admin`.
+- **GIFs on group cards**: make a free app at developers.giphy.com (API, not SDK) and put its key in `GIPHY_API_KEY`. Without it the GIF button says GIFs aren't on yet; photos and links still work.

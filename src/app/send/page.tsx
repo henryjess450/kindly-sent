@@ -5,11 +5,13 @@ import { Composer } from "@/components/composer/Composer";
 import { ownedCard, publicCard } from "@/lib/cards";
 import { getUser } from "@/lib/session";
 import { clientPayConfig } from "@/lib/payments";
+import { usableCode } from "@/lib/freecodes";
 
 export const metadata: Metadata = { title: "Write a card" };
 
-export default async function SendPage({ searchParams }: { searchParams: Promise<{ design?: string; edit?: string }> }) {
-  const { design, edit } = await searchParams;
+export default async function SendPage({ searchParams }: { searchParams: Promise<{ design?: string; edit?: string; free?: string }> }) {
+  const { design, edit, free } = await searchParams;
+  const freeCode = !edit && usableCode(free, "card") ? free : undefined;
   const user = await getUser();
   let editCard;
   if (edit) {
@@ -20,7 +22,7 @@ export default async function SendPage({ searchParams }: { searchParams: Promise
   return (
     <>
       <Nav />
-      <Composer signedInEmail={user?.email ?? null} defaultName={user?.name ?? ""} initialDesign={design} editCard={editCard} pay={clientPayConfig()} />
+      <Composer signedInEmail={user?.email ?? null} defaultName={user?.name ?? ""} initialDesign={design} editCard={editCard} pay={clientPayConfig()} freeCode={freeCode} />
     </>
   );
 }

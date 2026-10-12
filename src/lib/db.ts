@@ -107,6 +107,86 @@ const MIGRATIONS: string[] = [
   ALTER TABLE gifts ADD COLUMN secret TEXT;
   ALTER TABLE gifts ADD COLUMN revealed_at INTEGER;
   `,
+  // 4: group cards. One card, many signers, bought through the cart.
+  `
+  CREATE TABLE group_cards (
+    id TEXT PRIMARY KEY,
+    invite_token TEXT NOT NULL UNIQUE,
+    view_token TEXT NOT NULL UNIQUE,
+    cart_id TEXT,
+    owner_email TEXT,
+    design TEXT NOT NULL,
+    envelope TEXT NOT NULL DEFAULT 'match',
+    liner TEXT NOT NULL DEFAULT 'confetti',
+    headline TEXT NOT NULL DEFAULT '',
+    recipient_name TEXT NOT NULL,
+    recipient_email TEXT NOT NULL,
+    timezone TEXT NOT NULL,
+    due_at INTEGER NOT NULL,
+    deliver_at INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    price_cents INTEGER NOT NULL DEFAULT 0,
+    payment_id TEXT,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    next_attempt_at INTEGER,
+    last_error TEXT,
+    reminder_sent_at INTEGER,
+    sent_at INTEGER,
+    opened_at INTEGER,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX group_cards_due ON group_cards(status, deliver_at);
+  CREATE INDEX group_cards_cart ON group_cards(cart_id, status);
+  CREATE TABLE group_admins (
+    group_id TEXT NOT NULL REFERENCES group_cards(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    role TEXT NOT NULL,
+    added_at INTEGER NOT NULL,
+    PRIMARY KEY (group_id, email)
+  );
+  CREATE INDEX group_admins_email ON group_admins(email);
+  CREATE TABLE group_invites (
+    id TEXT PRIMARY KEY,
+    group_id TEXT NOT NULL REFERENCES group_cards(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    invited_at INTEGER NOT NULL,
+    reminded_at INTEGER,
+    UNIQUE (group_id, email)
+  );
+  CREATE TABLE signatures (
+    id TEXT PRIMARY KEY,
+    group_id TEXT NOT NULL REFERENCES group_cards(id) ON DELETE CASCADE,
+    edit_hash TEXT NOT NULL,
+    invite_id TEXT,
+    name TEXT NOT NULL,
+    message TEXT NOT NULL,
+    font TEXT NOT NULL,
+    ink TEXT NOT NULL,
+    paper TEXT NOT NULL,
+    media TEXT NOT NULL DEFAULT '[]',
+    link_url TEXT,
+    link_label TEXT,
+    hidden INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE INDEX signatures_group ON signatures(group_id, created_at);
+  `,
+  // 5: free links the site admin hands out (a free card, or a free group card).
+  `
+  CREATE TABLE free_codes (
+    code TEXT PRIMARY KEY,
+    kind TEXT NOT NULL,
+    label TEXT NOT NULL DEFAULT '',
+    max_uses INTEGER NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0,
+    disabled INTEGER NOT NULL DEFAULT 0,
+    created_by TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  ALTER TABLE cards ADD COLUMN free_code TEXT;
+  ALTER TABLE group_cards ADD COLUMN free_code TEXT;
+  `,
 ];
 
 let db: DatabaseSync | undefined;
@@ -187,6 +267,62 @@ export type PaymentRow = {
   fee_cents: number;
   refunded_cents: number;
   receipt_url: string | null;
+  created_at: number;
+};
+
+export type GroupRow = {
+  id: string;
+  invite_token: string;
+  view_token: string;
+  cart_id: string | null;
+  owner_email: string | null;
+  design: string;
+  envelope: string;
+  liner: string;
+  headline: string;
+  recipient_name: string;
+  recipient_email: string;
+  timezone: string;
+  due_at: number;
+  deliver_at: number;
+  status: "draft" | "collecting" | "sending" | "sent" | "failed" | "canceled";
+  price_cents: number;
+  payment_id: string | null;
+  attempts: number;
+  next_attempt_at: number | null;
+  last_error: string | null;
+  reminder_sent_at: number | null;
+  sent_at: number | null;
+  opened_at: number | null;
+  created_at: number;
+};
+
+export type SignatureRow = {
+  id: string;
+  group_id: string;
+  edit_hash: string;
+  invite_id: string | null;
+  name: string;
+  message: string;
+  font: string;
+  ink: string;
+  paper: string;
+  media: string; // JSON: Media[]
+  link_url: string | null;
+  link_label: string | null;
+  hidden: number;
+  created_at: number;
+  updated_at: number;
+};
+
+export type FreeCodeRow = {
+  code: string;
+  kind: "card" | "group";
+  label: string;
+  max_uses: number;
+  used: number;
+  disabled: number;
+  created_by: string;
   created_at: number;
 };
 

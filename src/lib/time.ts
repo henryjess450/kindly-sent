@@ -57,3 +57,14 @@ export function formatWhen(utcMs: number, timeZone: string): string {
     minute: "2-digit",
   }).format(new Date(utcMs));
 }
+
+/** UTC milliseconds -> the local "YYYY-MM-DD" and "HH:MM" in a zone. */
+export function utcToLocal(utcMs: number, timeZone: string): { date: string; time: string } {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(utcMs));
+  const g = (t: string) => parts.find((p) => p.type === t)!.value;
+  return { date: `${g("year")}-${g("month")}-${g("day")}`, time: `${g("hour")}:${g("minute")}` };
+}
+
+export function formatShort(utcMs: number, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(utcMs));
+}

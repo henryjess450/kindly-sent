@@ -71,15 +71,18 @@ export function Composer({
   initialDesign,
   editCard,
   pay,
+  freeCode,
 }: {
   signedInEmail: string | null;
   defaultName: string;
   initialDesign?: string;
   editCard?: PublicCard;
   pay: ClientPayConfig;
+  freeCode?: string;
 }) {
   const vp = useViewport();
-  const needsPay = !editCard || editCard.status === "unpaid";
+  const free = !!freeCode && !editCard;
+  const needsPay = !free && (!editCard || editCard.status === "unpaid");
   const steps = STEPS;
   const [i, setI] = useState(editCard || initialDesign ? 1 : 0);
   const step = steps[i];
@@ -185,7 +188,7 @@ export function Composer({
       const res = await fetch(editCard ? `/api/cards/${editCard.id}` : "/api/cards", {
         method: editCard ? "PATCH" : "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...d, paymentToken }),
+        body: JSON.stringify({ ...d, paymentToken, ...(free ? { freeCode } : {}) }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Something went wrong. Try again.");
@@ -423,13 +426,28 @@ export function Composer({
 
             {step === "pay" && (
               <div className="form-stack">
-                <h1 className="display display-m">{needsPay ? "Seal it." : "Save your changes."}</h1>
+                <h1 className="display display-m">{needsPay || free ? "Seal it." : "Save your changes."}</h1>
                 <dl className="summary">
                   <div><dt>Card</dt><dd>{design.name} <button className="link-btn" onClick={() => go(0)}>Change</button></dd></div>
                   <div><dt>To</dt><dd>{d.recipientName} · {d.recipientEmail}</dd></div>
                   <div><dt>Arrives</dt><dd>{whenLabel(d)}{!d.sendNow && <span className="muted"> ({d.timezone.replace(/_/g, " ")})</span>}{d.repeat === "yearly" && !d.sendNow ? ", every year" : ""}</dd></div>
                   <div><dt>From</dt><dd>{d.senderName}</dd></div>
                 </dl>
+                {free && (
+                  <>
+                    <div className="free-note">
+                      <strong>This card is free.</strong>
+                      <span className="hint">Courtesy of Kindly Sent. No payment needed.</span>
+                    </div>
+                    {!signedInEmail && (
+                      <div className="field">
+                        <label htmlFor="em">Your email</label>
+                        <input id="em" className="input" type="email" autoComplete="email" placeholder="you@example.com" value={d.email} onChange={(e) => set("email", e.target.value)} />
+                        <span className="hint">So you can change or cancel the card before it goes out. No password needed.</span>
+                      </div>
+                    )}
+                  </>
+                )}
                 {needsPay && (
                   <>
                     <table className="price">
@@ -469,7 +487,7 @@ export function Composer({
             <button className="btn btn-primary" onClick={() => go(i + 1)}>Continue</button>
           ) : (
             <button className="btn btn-brand" onClick={() => submit()} disabled={busy}>
-              {busy ? "Sealing..." : needsPay ? `Pay ${money(q.total)} and ${d.sendNow ? "send" : "schedule"}` : "Save changes"}
+              {busy ? "Sealing..." : free ? (d.sendNow ? "Send it free" : "Schedule it free") : needsPay ? `Pay ${money(q.total)} and ${d.sendNow ? "send" : "schedule"}` : "Save changes"}
             </button>
           )}
         </div>
@@ -528,6 +546,7 @@ export function Composer({
         .price td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
         .price .total td { font-weight: 700; font-size: 19px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
         .link-btn { border: 0; background: none; color: var(--blue); cursor: pointer; font-size: 15px; padding: 0 0 0 6px; }
+        .free-note { display: grid; gap: 4px; padding: 16px 18px; border-radius: 14px; background: #e9f6ec; color: var(--ok); }
         .composer-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 32px; }
       `}</style>
     </div>

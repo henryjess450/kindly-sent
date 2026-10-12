@@ -63,6 +63,23 @@ Each app runs in its own folder with its own `docker compose`. Adding a third si
 
 Gift cards were built and then removed on 2026-10-11 at your request: every brand gift card service (Tango Card, Tremendous, Giftbit) needs a business signup and pays for the card when it's bought. Coastline/LightLab's own gift cards would work with no signup if you ever want gifts back.
 
+## Round 3: group cards (2026-10-11)
+
+- **Setup** at `/group`: design, who it's for, a headline, when signatures are due, when it's delivered, envelope. Goes into a **cart**.
+- **Cart** at `/cart`: $1.50 per group card, or **50¢ each for every card once there are 5 or more** (prices in `src/config/pricing.ts`). One Square payment for the whole cart.
+- **Admins**: whoever pays is the owner. Owners and admins can add co-admins by email, invite people by email, see who has signed, hide or delete notes, change dates, close signing, deliver now. Only the owner can cancel (refunds that card's share).
+- **Invite link** `/g/…`: anyone with it signs until the due date: message, name, 5 writing styles, ink, note colour, up to 4 photos/GIFs/stickers (GIPHY), and a link. Signers can edit or remove their own note (kept in their browser). Invitees who haven't signed get a reminder a day before; admins get the count.
+- **Delivery**: the scheduler emails the recipient at the delivery time. `/gc/…` opens the envelope, the card says who signed, and every note is laid out underneath.
+- Photos are shrunk in the browser, checked by their bytes, and saved in `DATA_DIR/uploads` (backed up daily with the database).
+- **To switch on GIFs**: free key from developers.giphy.com, put it in `GIPHY_API_KEY`.
+
+Note on the price cliff: 4 cards cost $6.00 but 5 cost $2.50. The cart shows "Add 1 more for 50¢ a card" so people notice.
+
+## Round 4: site admin (2026-10-11)
+
+- **/admin** (emails in `ADMIN_EMAILS`, magic-link sign-in like everyone else): totals, every card and group card that's soon to be sent or already sent, search, filter, view any card, manage any group card.
+- **Free links**: make a link for a free card or a free group card, with a number of uses and a label. `/free/CODE` opens the right composer with no payment. Turn a link off any time.
+
 ## Phase 2: next up
 
 1. **Name and domain**: pick the name, register the domain, point DNS at the home IP (same as Coastline).

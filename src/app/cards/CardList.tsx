@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { CardArt } from "@/components/CardArt";
 import { getDesign, DESIGNS } from "@/lib/designs";
 import type { PublicCard } from "@/lib/cards";
+import type { PublicGroup } from "@/lib/groups";
 import { money } from "@/config/pricing";
 
 function status(c: PublicCard) {
@@ -34,7 +35,7 @@ function countdown(ms: number) {
   return `in ${Math.max(1, Math.round(diff / 6e4))} min`;
 }
 
-export function CardList({ cards, email, name, notifyOpen, confirmed }: { cards: PublicCard[]; email: string; name: string; notifyOpen: boolean; confirmed?: string }) {
+export function CardList({ cards, email, name, notifyOpen, confirmed, groups = [] }: { cards: PublicCard[]; email: string; name: string; notifyOpen: boolean; confirmed?: string; groups?: PublicGroup[] }) {
   const router = useRouter();
   const [list, setList] = useState(cards);
   const [notify, setNotify] = useState(notifyOpen);
@@ -134,6 +135,44 @@ export function CardList({ cards, email, name, notifyOpen, confirmed }: { cards:
           <h2 className="list-head" style={{ marginTop: 56 }}>Delivered</h2>
           <ul className="card-list"><AnimatePresence>{past.map(row)}</AnimatePresence></ul>
         </>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 56 }}>
+        <h2 className="list-head" style={{ margin: 0 }}>Group cards</h2>
+        <Link href="/group" className="btn btn-ghost btn-small">Start one</Link>
+      </div>
+      <div style={{ height: 14 }} />
+      {groups.length === 0 ? (
+        <div className="empty">
+          One card, everyone signs. <Link href="/group" className="link">Start a group card</Link> for a birthday, a goodbye or a big thank you.
+        </div>
+      ) : (
+        <ul className="card-list">
+          {groups.map((g, i) => {
+            const d = getDesign(g.design) ?? DESIGNS[0];
+            const closed = Date.now() >= g.dueAt;
+            const s = g.status === "sent" ? (g.openedAt ? { cls: "opened", label: "Opened" } : { cls: "sent", label: "Delivered" }) : g.status === "failed" ? { cls: "failed", label: "Couldn't deliver" } : closed ? { cls: "pending", label: "Signing closed" } : { cls: "scheduled", label: "Collecting signatures" };
+            return (
+              <motion.li key={g.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }} className="card-row">
+                <Link href={`/groups/${g.id}`} className="card-thumb" aria-label={`Manage the card for ${g.recipientName}`}>
+                  <CardArt design={d} />
+                </Link>
+                <div className="card-info">
+                  <div className="card-to">
+                    <strong>{g.headline || `For ${g.recipientName}`}</strong>
+                    <span className={`pill pill-${s.cls}`}>{s.label}</span>
+                  </div>
+                  <div className="muted" style={{ fontSize: 15 }}>
+                    {g.signatures} signed · {g.status === "sent" ? `delivered ${when({ sentAt: g.sentAt, sendAt: g.deliverAt, timezone: g.timezone } as PublicCard)}` : `delivered ${when({ sentAt: null, sendAt: g.deliverAt, timezone: g.timezone } as PublicCard)} · ${countdown(g.deliverAt)}`}
+                  </div>
+                </div>
+                <div className="card-actions">
+                  <Link href={`/groups/${g.id}`} className="btn btn-ghost btn-small">Manage</Link>
+                </div>
+              </motion.li>
+            );
+          })}
+        </ul>
       )}
 
       <h2 className="list-head" style={{ marginTop: 56 }}>Settings</h2>

@@ -23,6 +23,10 @@ export function OpenCard({
   preview,
   envelope,
   liner,
+  openUrl,
+  eyebrow,
+  onOpened,
+  seal,
 }: {
   design: Design;
   content: CardContent;
@@ -30,18 +34,25 @@ export function OpenCard({
   preview: boolean;
   envelope: string;
   liner: string;
+  openUrl?: string;
+  eyebrow?: string;
+  onOpened?: () => void;
+  seal?: string;
 }) {
   const vp = useViewport();
   const [stage, setStage] = useState<Stage>("sealed");
   const book = vp.w >= 760;
   const w = Math.round(book ? Math.min(340, (vp.w - 100) / 2, (vp.h - 190) / 1.4) : Math.min(330, vp.w - 56, (vp.h - 210) / 1.4));
   const ew = Math.round(Math.min(260, vp.w * 0.6)); // card width that fits the envelope
-  const letter = sealLetter(content.senderName);
+  const letter = seal ?? sealLetter(content.senderName);
 
   async function open() {
     if (stage !== "sealed") return;
-    if (!preview) void fetch(`/api/open/${token}`, { method: "POST" }).catch(() => {});
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return setStage("open");
+    if (!preview) void fetch(openUrl ?? `/api/open/${token}`, { method: "POST" }).catch(() => {});
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setStage("open");
+      return onOpened?.();
+    }
     setStage("unseal");
     await wait(900);
     setStage("rise");
@@ -49,6 +60,7 @@ export function OpenCard({
     setStage("present");
     await wait(1100);
     setStage("open");
+    onOpened?.();
   }
 
   const envGone = stage === "present" || stage === "open";
@@ -59,7 +71,7 @@ export function OpenCard({
       <AnimatePresence>
         {stage === "sealed" && (
           <motion.div key="caption" className="open-caption" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.6, delay: 0.3 }}>
-            <p className="eyebrow" style={{ color: "var(--ink-3)" }}>{preview ? "Preview" : "You have a card"}</p>
+            <p className="eyebrow" style={{ color: "var(--ink-3)" }}>{preview ? "Preview" : (eyebrow ?? "You have a card")}</p>
             <h1 className="display display-m">For {content.recipientName}</h1>
           </motion.div>
         )}

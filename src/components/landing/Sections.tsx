@@ -281,3 +281,77 @@ export function Pricing() {
     </section>
   );
 }
+
+const FAN = [
+  { bg: "#FFF4C2", x: -150, y: -40, r: -12, text: "Happiest of birthdays!!", name: "Ana", font: "var(--font-hand)" },
+  { bg: "#DDEEFF", x: 150, y: -70, r: 9, text: "Cake in the break room at 3?", name: "Ben", font: "var(--font-marker)" },
+  { bg: "#FFE3E3", x: -130, y: 120, r: 7, text: "", name: "Chloe", font: "var(--font-hand)", photo: true },
+  { bg: "#DDF5E6", x: 140, y: 110, r: -8, text: "So lucky to work with you.", name: "Dev", font: "var(--font-serif)" },
+];
+
+export function GroupCards() {
+  const d = getDesign("party") ?? DESIGNS[0];
+  return (
+    <section id="group" className="section" style={{ overflow: "hidden", scrollMarginTop: 52 }}>
+      <div className="wrap group-grid">
+        <motion.div {...rise}>
+          <p className="eyebrow">Group cards</p>
+          <h2 className="display display-l">One card. Everyone signs.</h2>
+          <p className="lede" style={{ marginTop: 16, maxWidth: 520 }}>
+            Share a single link. The whole team, family or friend group adds a message, a photo, a GIF or a link. You set the deadline, we deliver it on the day.
+          </p>
+          <ul className="group-points">
+            <li><span className="tick">✓</span>Photos, GIFs and stickers from GIPHY, and links</li>
+            <li><span className="tick">✓</span>A signing deadline, with a reminder the day before</li>
+            <li><span className="tick">✓</span>Add co-admins, see who signed, tidy up messages</li>
+          </ul>
+          <div className="group-price">
+            <div><strong>{money(pricing.groupCents)}</strong><span>per group card</span></div>
+            <div className="group-bulk"><strong>{money(pricing.groupBulkCents)}</strong><span>each when you get {pricing.groupBulkMin}+</span></div>
+          </div>
+          <Link href="/group" className="btn btn-brand" style={{ marginTop: 28 }}>Start a group card</Link>
+        </motion.div>
+        <div className="group-visual" aria-hidden>
+          <motion.div className="group-cover" initial={{ opacity: 0, scale: 0.8, rotate: -10 }} whileInView={{ opacity: 1, scale: 1, rotate: -3 }} viewport={{ once: true }} transition={{ type: "spring", stiffness: 110, damping: 15 }}>
+            <CardArt design={d} />
+          </motion.div>
+          {FAN.map((n, i) => (
+            <motion.div
+              key={n.name}
+              className="group-note"
+              style={{ background: n.bg }}
+              initial={{ opacity: 0, x: 0, y: 0, rotate: 0, scale: 0.5 }}
+              whileInView={{ opacity: 1, x: n.x, y: n.y, rotate: n.r, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ type: "spring", stiffness: 90, damping: 13, delay: 0.35 + i * 0.12 }}
+            >
+              {n.photo ? <div className="group-photo" /> : <p style={{ fontFamily: n.font }}>{n.text}</p>}
+              <span style={{ fontFamily: n.font }}>— {n.name}</span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+      <style>{`
+        .group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+        .group-points { list-style: none; padding: 0; margin: 26px 0 0; display: grid; gap: 10px; font-size: 16px; }
+        .group-points li { display: flex; gap: 10px; }
+        .group-price { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+        .group-price > div { background: var(--bg-alt); border-radius: 16px; padding: 14px 18px; display: grid; }
+        .group-price strong { font-family: var(--font-display); font-size: 30px; letter-spacing: -0.03em; }
+        .group-price span { font-size: 13px; color: var(--ink-3); }
+        .group-bulk { background: #e9f6ec !important; } .group-bulk strong { color: var(--ok); }
+        .group-visual { position: relative; height: 480px; display: grid; place-items: center; }
+        .group-cover { width: 200px; aspect-ratio: 5/7; border-radius: 6px; overflow: hidden; box-shadow: var(--shadow-card); position: relative; z-index: 1; }
+        .group-cover svg { width: 100%; height: 100%; display: block; }
+        .group-note { position: absolute; z-index: 2; width: 150px; padding: 12px 12px 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 12px 28px rgba(0,0,0,.12); display: grid; gap: 6px; }
+        .group-note p { margin: 0; font-size: 19px; line-height: 1.15; color: #24211D; }
+        .group-note span { text-align: right; font-size: 17px; color: #24211D; }
+        .group-photo { height: 80px; border-radius: 3px; background: linear-gradient(135deg, #F7B267 0%, #F4845F 45%, #7D5BA6 100%); }
+        @media (max-width: 860px) {
+          .group-grid { grid-template-columns: 1fr; }
+          .group-visual { height: 400px; transform: scale(.82); }
+        }
+      `}</style>
+    </section>
+  );
+}
