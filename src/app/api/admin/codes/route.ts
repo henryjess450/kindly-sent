@@ -26,3 +26,11 @@ export async function PATCH(req: Request) {
   getDb().prepare("UPDATE free_codes SET disabled = ? WHERE code = ?").run(body.disabled ? 1 : 0, String(body.code ?? ""));
   return NextResponse.json({ codes: listCodes() });
 }
+
+/** Delete a link for good. Cards already sent with it keep their "free" mark. */
+export async function DELETE(req: Request) {
+  if (!(await admin())) return NextResponse.json({ error: "Not allowed." }, { status: 403 });
+  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  getDb().prepare("DELETE FROM free_codes WHERE code = ?").run(String(body.code ?? ""));
+  return NextResponse.json({ codes: listCodes() });
+}

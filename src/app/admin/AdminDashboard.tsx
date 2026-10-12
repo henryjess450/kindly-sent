@@ -78,6 +78,11 @@ export function AdminDashboard({ stats, upcoming, sent, codes: initialCodes, sit
     const res = await fetch("/api/admin/codes", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: c.code, disabled: !c.disabled }) });
     if (res.ok) setCodes((await res.json()).codes);
   }
+  async function remove(c: FreeCodeRow) {
+    if (!confirm(`Delete "${c.label || "this free link"}"? The link stops working for good. Cards already sent with it aren't affected.`)) return;
+    const res = await fetch("/api/admin/codes", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ code: c.code }) });
+    if (res.ok) setCodes((await res.json()).codes);
+  }
   async function copy(url: string) {
     await navigator.clipboard.writeText(url).catch(() => {});
     setCopied(url);
@@ -142,6 +147,7 @@ export function AdminDashboard({ stats, upcoming, sent, codes: initialCodes, sit
                   <div className="ad-actions">
                     <button className="btn btn-primary btn-small" onClick={() => copy(url)}>{copied === url ? "Copied" : "Copy"}</button>
                     <button className="btn btn-ghost btn-small" onClick={() => toggle(c)}>{c.disabled ? "Turn on" : "Turn off"}</button>
+                    <button className="btn btn-ghost btn-small ad-del" onClick={() => remove(c)}>Delete</button>
                   </div>
                 </li>
               );
@@ -192,6 +198,7 @@ export function AdminDashboard({ stats, upcoming, sent, codes: initialCodes, sit
         .ad-codes li { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line-soft); }
         .ad-code-info { display: grid; gap: 2px; min-width: 0; font-size: 14px; }
         .ad-url { font-size: 13px; color: var(--blue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ad-del { color: #d70015; }
         .ad-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
         .ad-bar .segmented button { padding: 8px 16px; }
         .ad-search { flex: 1; min-width: 200px; }

@@ -16,8 +16,8 @@ export default async function FreeLink({ params }: { params: Promise<{ code: str
       <Nav />
       <main style={{ minHeight: "calc(100vh - 52px)", display: "grid", placeItems: "center", padding: 22, textAlign: "center" }}>
         <div>
-          <h1 className="display display-m">This free link has been used up.</h1>
-          <p className="lede" style={{ margin: "12px auto 28px", maxWidth: 480 }}>Every free card on it has been sent. You can still send one for {c?.kind === "group" ? "$1.50" : "$1"}.</p>
+          <h1 className="display display-m">{c && !c.disabled ? "This free link has been used up." : "This free link isn't working anymore."}</h1>
+          <p className="lede" style={{ margin: "12px auto 28px", maxWidth: 480 }}>{c && !c.disabled ? "Every free card on it has been sent." : "It may have been switched off or removed."} You can still send one for {c?.kind === "group" ? "$1.50" : "$1"}.</p>
           <Link href={c?.kind === "group" ? "/group" : "/send"} className="btn btn-brand">{c?.kind === "group" ? "Start a group card" : "Write a card"}</Link>
         </div>
       </main>
