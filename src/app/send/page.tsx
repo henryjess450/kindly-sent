@@ -4,6 +4,8 @@ import { Nav } from "@/components/Nav";
 import { Composer } from "@/components/composer/Composer";
 import { ownedCard, publicCard } from "@/lib/cards";
 import { getUser } from "@/lib/session";
+import { availableBrands } from "@/lib/giftcards";
+import { clientPayConfig } from "@/lib/payments";
 
 export const metadata: Metadata = { title: "Write a card" };
 
@@ -13,13 +15,13 @@ export default async function SendPage({ searchParams }: { searchParams: Promise
   let editCard;
   if (edit) {
     const card = ownedCard(edit, user);
-    if (!card || !["pending", "scheduled", "failed"].includes(card.status)) notFound();
+    if (!card || !["pending", "unpaid", "scheduled", "failed"].includes(card.status)) notFound();
     editCard = publicCard(card);
   }
   return (
     <>
       <Nav />
-      <Composer signedInEmail={user?.email ?? null} defaultName={user?.name ?? ""} initialDesign={design} editCard={editCard} />
+      <Composer signedInEmail={user?.email ?? null} defaultName={user?.name ?? ""} initialDesign={design} editCard={editCard} brands={availableBrands()} pay={clientPayConfig()} />
     </>
   );
 }

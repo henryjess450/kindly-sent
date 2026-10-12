@@ -62,6 +62,45 @@ const MIGRATIONS: string[] = [
     created_at INTEGER NOT NULL
   );
   `,
+  // 2: paid cards, gift cards, style options.
+  `
+  ALTER TABLE cards ADD COLUMN sender_email TEXT;
+  ALTER TABLE cards ADD COLUMN ink TEXT NOT NULL DEFAULT 'black';
+  ALTER TABLE cards ADD COLUMN envelope TEXT NOT NULL DEFAULT 'match';
+  ALTER TABLE cards ADD COLUMN liner TEXT NOT NULL DEFAULT 'plain';
+  ALTER TABLE cards ADD COLUMN price_cents INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE cards ADD COLUMN payment_id TEXT;
+  ALTER TABLE cards ADD COLUMN reminder_sent_at INTEGER;
+  UPDATE cards SET sender_email = COALESCE(pending_email, (SELECT email FROM users WHERE users.id = cards.user_id));
+  CREATE INDEX cards_sender ON cards(sender_email);
+  CREATE TABLE payments (
+    id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    provider_payment_id TEXT NOT NULL,
+    email TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    card_cents INTEGER NOT NULL,
+    tax_cents INTEGER NOT NULL,
+    gift_cents INTEGER NOT NULL,
+    fee_cents INTEGER NOT NULL,
+    refunded_cents INTEGER NOT NULL DEFAULT 0,
+    receipt_url TEXT,
+    created_at INTEGER NOT NULL
+  );
+  CREATE TABLE gifts (
+    id TEXT PRIMARY KEY,
+    card_id TEXT NOT NULL UNIQUE REFERENCES cards(id) ON DELETE CASCADE,
+    brand TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    provider TEXT,
+    provider_order_id TEXT,
+    redeem_url TEXT,
+    error TEXT,
+    created_at INTEGER NOT NULL,
+    issued_at INTEGER
+  );
+  `,
 ];
 
 let db: DatabaseSync | undefined;
@@ -105,7 +144,14 @@ export type CardRow = {
   local_date: string;
   local_time: string;
   repeat: "none" | "yearly";
-  status: "pending" | "scheduled" | "sending" | "sent" | "failed" | "canceled";
+  status: "pending" | "unpaid" | "scheduled" | "sending" | "sent" | "failed" | "canceled";
+  sender_email: string | null;
+  ink: string;
+  envelope: string;
+  liner: string;
+  price_cents: number;
+  payment_id: string | null;
+  reminder_sent_at: number | null;
   attempts: number;
   next_attempt_at: number | null;
   last_error: string | null;
@@ -121,4 +167,33 @@ export type UserRow = {
   name: string | null;
   notify_open: number;
   created_at: number;
+};
+
+export type PaymentRow = {
+  id: string;
+  provider: "square" | "demo";
+  provider_payment_id: string;
+  email: string;
+  amount_cents: number;
+  card_cents: number;
+  tax_cents: number;
+  gift_cents: number;
+  fee_cents: number;
+  refunded_cents: number;
+  receipt_url: string | null;
+  created_at: number;
+};
+
+export type GiftRow = {
+  id: string;
+  card_id: string;
+  brand: string;
+  amount_cents: number;
+  status: "held" | "issued" | "failed" | "refunded";
+  provider: string | null;
+  provider_order_id: string | null;
+  redeem_url: string | null;
+  error: string | null;
+  created_at: number;
+  issued_at: number | null;
 };

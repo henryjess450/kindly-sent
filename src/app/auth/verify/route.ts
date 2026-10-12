@@ -10,6 +10,8 @@ export async function GET(req: Request) {
   if (!row) return NextResponse.redirect(`${site.url}/signin?expired=1`);
   const user = findOrCreateUser(row.email);
   await startSession(user.id);
+  // Cards bought before they had an account become theirs.
+  getDb().prepare("UPDATE cards SET user_id = ? WHERE user_id IS NULL AND sender_email = ?").run(user.id, row.email);
   if (row.card_id) {
     // The card they wrote before confirming now belongs to them and joins the queue.
     getDb()

@@ -7,11 +7,14 @@ import { AnimatePresence, motion } from "motion/react";
 import { CardArt } from "@/components/CardArt";
 import { getDesign, DESIGNS } from "@/lib/designs";
 import type { PublicCard } from "@/lib/cards";
+import { getGiftBrand } from "@/config/gifts";
+import { money } from "@/config/pricing";
 
 function status(c: PublicCard) {
   if (c.status === "sent" && c.openedAt) return { cls: "opened", label: "Opened" };
   if (c.status === "sent") return { cls: "sent", label: "Delivered" };
   if (c.status === "pending") return { cls: "pending", label: "Confirm your email" };
+  if (c.status === "unpaid") return { cls: "pending", label: "Needs your OK" };
   if (c.status === "failed") return { cls: "failed", label: "Couldn't deliver" };
   if (c.status === "sending") return { cls: "sending", label: "Sending" };
   return { cls: "scheduled", label: "Scheduled" };
@@ -40,10 +43,16 @@ export function CardList({ cards, email, name, notifyOpen, confirmed }: { cards:
   const past = list.filter((c) => c.status === "sent").sort((a, b) => (b.sentAt ?? 0) - (a.sentAt ?? 0));
   const justConfirmed = list.find((c) => c.id === confirmed);
 
-  async function cancel(id: string) {
-    if (!confirm("Cancel this card? It won't be sent.")) return;
-    const res = await fetch(`/api/cards/${id}`, { method: "DELETE" });
-    if (res.ok) setList((l) => l.filter((c) => c.id !== id));
+  const [notice, setNotice] = useState("");
+  async function cancel(c: PublicCard) {
+    const paid = c.status !== "unpaid" && c.priceCents > 0;
+    if (!confirm(`Cancel this card? It won't be sent${paid ? " and you'll get a full refund" : ""}.`)) return;
+    const res = await fetch(`/api/cards/${c.id}`, { method: "DELETE" });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setList((l) => l.filter((x) => x.id !== c.id));
+      setNotice(json.error ?? (json.refunded ? `Cancelled. ${money(json.refunded)} is on its way back to your card.` : "Cancelled."));
+    }
   }
   async function toggleNotify() {
     const v = !notify;
@@ -59,7 +68,8 @@ export function CardList({ cards, email, name, notifyOpen, confirmed }: { cards:
   const row = (c: PublicCard, i: number) => {
     const d = getDesign(c.design) ?? DESIGNS[0];
     const s = status(c);
-    const editable = ["pending", "scheduled", "failed"].includes(c.status);
+    const editable = ["pending", "unpaid", "scheduled", "failed"].includes(c.status);
+    const gb = c.gift ? getGiftBrand(c.gift.brand) : undefined;
     return (
       <motion.li key={c.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -40, transition: { duration: 0.3 } }} transition={{ duration: 0.5, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }} className="card-row">
         <Link href={`/c/${c.token}`} className="card-thumb" aria-label={`Preview card to ${c.recipientName}`}>
@@ -70,6 +80,9 @@ export function CardList({ cards, email, name, notifyOpen, confirmed }: { cards:
             <strong>{c.recipientName}</strong>
             <span className={`pill pill-${s.cls}`}>{s.label}</span>
             {c.repeat === "yearly" && <span className="pill pill-sending">Every year</span>}
+            {gb && c.gift && c.gift.status !== "refunded" && (
+              <span className="pill" style={{ background: gb.bg, color: gb.fg }}>{money(c.gift.amountCents)} {gb.name}</span>
+            )}
           </div>
           <div className="muted" style={{ fontSize: 15 }}>
             {c.status === "sent" ? `Delivered ${when(c)}` : `${when(c)} · ${countdown(c.sendAt)}`}
@@ -78,8 +91,12 @@ export function CardList({ cards, email, name, notifyOpen, confirmed }: { cards:
         </div>
         <div className="card-actions">
           <Link href={`/c/${c.token}`} className="btn btn-ghost btn-small">Preview</Link>
-          {editable && <Link href={`/send?edit=${c.id}`} className="btn btn-ghost btn-small">Edit</Link>}
-          {editable && <button className="btn btn-ghost btn-small" onClick={() => cancel(c.id)}>Cancel</button>}
+          {c.status === "unpaid" ? (
+            <Link href={`/send?edit=${c.id}`} className="btn btn-brand btn-small">Send it for {money(c.priceCents)}</Link>
+          ) : (
+            editable && <Link href={`/send?edit=${c.id}`} className="btn btn-ghost btn-small">Edit</Link>
+          )}
+          {editable && <button className="btn btn-ghost btn-small" onClick={() => cancel(c)}>{c.status === "unpaid" ? "Skip" : "Cancel"}</button>}
         </div>
       </motion.li>
     );
@@ -96,6 +113,11 @@ export function CardList({ cards, email, name, notifyOpen, confirmed }: { cards:
       </div>
 
       <AnimatePresence>
+        {notice && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="panel" style={{ padding: "18px 22px", marginBottom: 28, borderLeft: "4px solid var(--blue)" }}>
+            {notice}
+          </motion.div>
+        )}
         {justConfirmed && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="panel" style={{ padding: "18px 22px", marginBottom: 28, borderLeft: "4px solid var(--ok)" }}>
             <strong>Confirmed.</strong> Your card to {justConfirmed.recipientName} is {justConfirmed.status === "sent" ? "on its way" : "scheduled"}.
@@ -146,7 +168,7 @@ export function CardList({ cards, email, name, notifyOpen, confirmed }: { cards:
         .card-info { min-width: 0; display: grid; gap: 3px; }
         .card-to { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 18px; }
         .card-msg { font-size: 14px; color: var(--ink-4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card-actions { display: flex; gap: 6px; }
+        .card-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
         @media (max-width: 640px) { .card-row { grid-template-columns: 52px 1fr; } .card-thumb { width: 52px; } .card-actions { grid-column: 1 / -1; } }
         .empty { padding: 28px; border: 1px dashed var(--line); border-radius: 18px; color: var(--ink-3); text-align: center; }
         .setting { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line-soft); }

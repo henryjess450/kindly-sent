@@ -1,31 +1,33 @@
 "use client";
 
 import { CardArt } from "./CardArt";
-import type { Design } from "@/lib/designs";
+import { getFont, getInk, type Design } from "@/lib/designs";
 
 export type CardContent = {
   message: string;
   font: string;
+  ink?: string;
   recipientName: string;
   senderName: string;
 };
 
 /** Message size follows its length, so short notes feel big and long letters still fit. */
-function sizeFor(len: number, font: string) {
-  const hand = font === "hand" ? 1.22 : 1;
+function sizeFor(len: number, scale: number) {
   const base = len < 90 ? 7 : len < 220 ? 5.6 : len < 450 ? 4.6 : len < 800 ? 3.8 : 3.2;
-  return `${(base * hand).toFixed(2)}cqw`;
+  return `${(base * scale).toFixed(2)}cqw`;
 }
 
 export function CardMessage({ design, content }: { design: Design; content: CardContent }) {
   const msg = content.message.trim();
+  const font = getFont(content.font);
+  const ink = getInk(content.ink ?? "black").color;
   return (
-    <div className={`ks-message font-${content.font}`} style={{ ["--accent" as string]: design.id === "snow" ? design.accent : design.accent }}>
+    <div className="ks-message" style={{ ["--accent" as string]: design.accent, color: ink, fontFamily: font.css }}>
       <div className="for">For {content.recipientName.trim() || "someone special"}</div>
-      <div className={`body${msg ? "" : " ks-placeholder"}`} style={{ fontSize: sizeFor(msg.length, content.font) }}>
+      <div className={`body${msg ? "" : " ks-placeholder"}`} style={{ fontSize: sizeFor(msg.length, font.scale), lineHeight: font.id === "hand" ? 1.22 : 1.45 }}>
         {msg || "Your message appears here as you type."}
       </div>
-      <div className="sign" style={{ fontSize: sizeFor(Math.min(msg.length, 220), content.font) }}>
+      <div className="sign" style={{ fontSize: sizeFor(Math.min(msg.length, 220), font.scale) }}>
         {content.senderName.trim() || "Your name"}
       </div>
     </div>

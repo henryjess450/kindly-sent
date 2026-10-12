@@ -11,6 +11,7 @@ const PALETTES: Record<Effect, string[]> = {
   snow: ["#FFFFFF"],
   sparkle: ["#F2B705", "#FFD860", "#FFFFFF"],
   petals: ["#F7C6C7", "#FFFFFF", "#E8A0A8"],
+  leaves: ["#C8553D", "#F28F3B", "#E0A458", "#8C4A2F"],
   none: [],
 };
 
@@ -45,7 +46,7 @@ export function Particles({ effect, play }: { effect: Effect; play: boolean }) {
       if (effect === "hearts") return { x: Math.random() * W(), y: H() + 20, vx: (Math.random() - 0.5) * 0.6, vy: -(1 + Math.random() * 1.6), r: 8 + Math.random() * 12, rot: (Math.random() - 0.5) * 0.6, vr: 0, color: pick(), life: 1, shape: 2 };
       if (effect === "sparkle") return { x: Math.random() * W(), y: Math.random() * H(), vx: 0, vy: 0, r: 4 + Math.random() * 9, rot: 0, vr: 0.02, color: pick(), life: 0, shape: 3 };
       // snow, petals, gentle confetti rain
-      return { x: Math.random() * W(), y: -20, vx: (Math.random() - 0.5) * 0.8, vy: 0.8 + Math.random() * 1.6, r: effect === "snow" ? 1.5 + Math.random() * 3 : 5 + Math.random() * 5, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.08, color: pick(), life: 1, shape: effect === "snow" ? 4 : effect === "petals" ? 5 : 1 };
+      return { x: Math.random() * W(), y: -20, vx: (Math.random() - 0.5) * 0.8, vy: 0.8 + Math.random() * 1.6, r: effect === "snow" ? 1.5 + Math.random() * 3 : effect === "leaves" ? 7 + Math.random() * 6 : 5 + Math.random() * 5, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.08, color: pick(), life: 1, shape: effect === "snow" ? 4 : effect === "petals" ? 5 : 1 };
     };
     if (effect === "confetti") for (let i = 0; i < 110; i++) ps.push(make(true));
     const start = performance.now();
@@ -75,7 +76,7 @@ export function Particles({ effect, play }: { effect: Effect; play: boolean }) {
       t++;
       const elapsed = now - start;
       if (elapsed < spawnFor) {
-        const rate = effect === "snow" ? 0.6 : effect === "hearts" ? 0.18 : effect === "sparkle" ? 0.25 : effect === "petals" ? 0.2 : 0.3;
+        const rate = effect === "snow" ? 0.6 : effect === "hearts" ? 0.18 : effect === "sparkle" ? 0.25 : effect === "petals" || effect === "leaves" ? 0.2 : 0.3;
         if (Math.random() < rate) ps.push(make(false));
       }
       ctx.clearRect(0, 0, W(), H());

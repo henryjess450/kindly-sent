@@ -17,6 +17,8 @@
   --font-text: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), system-ui, sans-serif;
   --font-hand: var(--font-caveat), "Bradley Hand", cursive;
   --font-serif: var(--font-newsreader), "New York", Georgia, serif;
+  --font-marker: var(--font-kalam), "Marker Felt", cursive;
+  --font-type: var(--font-elite), "American Typewriter", "Courier New", monospace;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --radius: 18px;
@@ -125,39 +127,46 @@ button, input, textarea, select { font: inherit; color: inherit; letter-spacing:
 .ks-face-back .fold { position: absolute; right: 0; top: 0; bottom: 0; width: 6%; background: rgba(0, 0, 0, 0.035); }
 
 .ks-message { position: absolute; inset: 0; padding: 9cqw 9cqw 8cqw; display: flex; flex-direction: column; color: #24211d; }
+.ks-message .body, .ks-message .sign { font-family: inherit; }
 .ks-message .for { font-family: var(--font-text); font-size: 3.1cqw; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 5cqw; }
 .ks-message .body { flex: 1; white-space: pre-wrap; overflow-wrap: anywhere; overflow: hidden; }
 .ks-message .sign { text-align: right; margin-top: 4cqw; }
-.font-hand .body, .font-hand .sign { font-family: var(--font-hand); line-height: 1.22; }
-.font-serif .body, .font-serif .sign { font-family: var(--font-serif); line-height: 1.45; }
-.font-sans .body, .font-sans .sign { font-family: var(--font-text); line-height: 1.45; letter-spacing: -0.01em; }
-.font-serif .sign { font-style: italic; }
+.ks-message .for { font-family: var(--font-text); }
 .ks-placeholder { color: #b9b3a8; }
 
-/* Living card art. Every loop starts and ends in the same place. */
+/* Living card art. Every loop starts and ends in the same pose. */
 @keyframes ks-flicker { 0%, 100% { transform: scale(1, 1) rotate(0deg); } 30% { transform: scale(0.94, 1.06) rotate(-2deg); } 60% { transform: scale(1.04, 0.96) rotate(2deg); } }
-@keyframes ks-beat { 0%, 100% { transform: scale(1); } 12% { transform: scale(1.05); } 24% { transform: scale(1); } 36% { transform: scale(1.03); } 48% { transform: scale(1); } }
-@keyframes ks-turn { from { transform: rotate(0deg); } to { transform: rotate(20deg); } }
-@keyframes ks-twinkle { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.7); opacity: 0.6; } }
-.ks-flicker { animation: ks-flicker 1.6s ease-in-out infinite; }
-.ks-beat { animation: ks-beat 2.4s ease-in-out infinite; }
-.ks-turn { animation: ks-turn 6s linear infinite; }
-.ks-twinkle { animation: ks-twinkle 2.8s ease-in-out infinite; }
+@keyframes ks-beat { 0%, 48%, 100% { transform: scale(1); } 12% { transform: scale(1.05); } 36% { transform: scale(1.03); } }
+@keyframes ks-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes ks-twinkle { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.6); opacity: 0.5; } }
+@keyframes ks-sway { 0%, 100% { transform: rotate(calc(var(--amp, 4deg) * -1)); } 50% { transform: rotate(var(--amp, 4deg)); } }
+@keyframes ks-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(var(--rise, -10px)); } }
+@keyframes ks-bob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(3deg); } }
+@keyframes ks-drift { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(var(--dx, 24px)); } }
+@keyframes ks-glow { 0%, 100% { opacity: var(--lo, 0.5); } 50% { opacity: var(--hi, 1); } }
+@keyframes ks-fall { from { transform: translate(0, -60px) rotate(0deg); } to { transform: translate(var(--dx, 30px), 780px) rotate(var(--spin, 360deg)); } }
+@keyframes ks-rise { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 15%, 80% { opacity: 1; } 100% { transform: translateY(var(--h, -400px)) scale(1); opacity: 0; } }
+@keyframes ks-steam { 0% { transform: translateY(10px) scaleX(0.8); opacity: 0; } 35% { opacity: 0.9; } 100% { transform: translateY(-50px) scaleX(1.15); opacity: 0; } }
+@keyframes ks-toss { 0%, 100% { transform: translateY(0) rotate(0deg); } 40% { transform: translateY(-70px) rotate(-12deg); } 55% { transform: translateY(-74px) rotate(8deg); } 80% { transform: translateY(0) rotate(0deg); } }
+@keyframes ks-flap { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.4); } }
+.ks-art.is-still * { animation-play-state: paused !important; }
 @media (prefers-reduced-motion: reduce) {
-  .ks-flicker, .ks-beat, .ks-turn, .ks-twinkle { animation: none; }
+  .ks-art * { animation: none !important; }
   .ks-card, .ks-card-cover { transition-duration: 0.01s; }
 }
 
 /* ---------- envelope ---------- */
 .ks-env { position: relative; width: calc(var(--w) * 1.52); height: calc(var(--w) * 1.08); }
-.ks-env-back { position: absolute; inset: 0; border-radius: calc(var(--w) * 0.03); box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 24px 60px rgba(0,0,0,.16); }
+.ks-env-back { position: absolute; inset: 0; border-radius: calc(var(--w) * 0.03); overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 24px 60px rgba(0,0,0,.16); }
+.ks-env-label { position: absolute; left: 0; right: 0; bottom: 14%; text-align: center; font-family: var(--font-hand); font-size: calc(var(--w) * 0.11); line-height: 1; }
 .ks-env-pocket { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
 .ks-env-pocket svg { width: 100%; height: 100%; display: block; border-radius: calc(var(--w) * 0.03); }
 .ks-env-flap {
   position: absolute; left: 0; right: 0; top: 0; height: 62%; z-index: 4;
-  transform-origin: top center; pointer-events: none;
+  transform-origin: top center; pointer-events: none; transform-style: preserve-3d;
 }
-.ks-env-flap svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.ks-flap-face { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.ks-flap-face.is-back { transform: rotateX(180deg); }
 .ks-env-card { position: absolute; left: 50%; top: 50%; z-index: 2; }
 .ks-seal {
   position: absolute; left: 50%; top: 62%; z-index: 5; width: calc(var(--w) * 0.2); height: calc(var(--w) * 0.2);

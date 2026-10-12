@@ -3,7 +3,8 @@ import Link from "next/link";
 import { OpenCard } from "@/components/OpenCard";
 import { BrandMark } from "@/components/Nav";
 import { getCardByToken } from "@/lib/cards";
-import { getDesign, DESIGNS } from "@/lib/designs";
+import { getDesign, DESIGNS, envelopeColor } from "@/lib/designs";
+import { getGift } from "@/lib/giftcards";
 import { getUser } from "@/lib/session";
 
 export const metadata: Metadata = { title: "You have a card", robots: { index: false, follow: false } };
@@ -25,16 +26,25 @@ export default async function CardPage({ params }: { params: Promise<{ token: st
     );
   }
 
+  const design = getDesign(card.design) ?? DESIGNS[0];
+  const g = getGift(card.id);
+  // The redeem link only ever appears on the recipient's own page.
+  const gift = g && (g.status === "issued" || (isOwner && g.status === "held"))
+    ? { brand: g.brand, amountCents: g.amount_cents, redeemUrl: g.status === "issued" && !isOwner ? g.redeem_url : null }
+    : null;
   return (
     <main>
       <div style={{ position: "fixed", top: 16, left: 22, zIndex: 50 }}>
         <BrandMark />
       </div>
       <OpenCard
-        design={getDesign(card.design) ?? DESIGNS[0]}
+        design={design}
         token={card.token}
         preview={isOwner}
-        content={{ message: card.message, font: card.font, recipientName: card.recipient_name, senderName: card.sender_name }}
+        envelope={envelopeColor(design, card.envelope)}
+        liner={card.liner}
+        gift={gift}
+        content={{ message: card.message, font: card.font, ink: card.ink, recipientName: card.recipient_name, senderName: card.sender_name }}
       />
     </main>
   );

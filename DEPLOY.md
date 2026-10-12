@@ -30,6 +30,14 @@ notepad .env
 
 Set `SITE_URL=https://kindlysent.ca` and the email settings. A Gmail App Password works the same way as Coastline's.
 
+**Payments (Square).** Use a separate Square application from Coastline so the money and reports stay apart (same Square account is fine). In the Square Developer Dashboard: create an app, copy the **Application ID**, **Access token** and **Location ID** into `.env`. Start with `SQUARE_ENV=sandbox` and the sandbox values, buy a card with Square's test card `4111 1111 1111 1111`, then switch to production values. For Apple Pay, register `kindlysent.ca` under the app's Apple Pay settings.
+
+**Gift cards (Tremendous).** Sign up at tremendous.com, then:
+1. Put money in your Tremendous balance (gift cards are paid from it).
+2. Create an API key (sandbox first: testflight.tremendous.com) and set `TREMENDOUS_API_KEY`.
+3. Run `node scripts/gift-catalog.mjs amazon` (and tim, starbucks...) to find each product ID, and paste them into `src/config/gifts.ts`. Brands without an ID are hidden in production.
+4. When it works in sandbox, set `TREMENDOUS_ENV=production` and the production key.
+
 ## 4. Switch to the shared Caddy
 
 This is the only step that touches Coastline. Its `docker-compose.yml` no longer starts its own Caddy; it joins the shared `web` network instead.

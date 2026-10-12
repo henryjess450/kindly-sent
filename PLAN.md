@@ -48,6 +48,22 @@ Each app runs in its own folder with its own `docker compose`. Adding a third si
 - **Daily database backups** to `./backups`, last 14 kept.
 - **Docker**: small standalone image, health check, SQLite built into Node (nothing native to compile).
 
+## Round 2: built (2026-10-11)
+
+- **21 animated designs** across 10 occasions (birthday, love, thank you, congratulations, holidays incl. Halloween and Thanksgiving, just because, new baby, wedding, get well, thinking of you). Every one moves, and every loop starts and ends in the same pose.
+- **More options**: 5 writing styles (handwritten, marker, classic, modern, typewriter), 5 ink colours, 8 envelope colours, 5 envelope liners that show when the flap lifts.
+- **$1 per card**, paid with Square (card, Apple Pay, Google Pay). Cancel before it goes out = automatic full refund.
+- **Gift cards inside cards** through Tremendous: Recipient's Choice, Amazon.ca, Tim Hortons, Starbucks, Indigo, Cineplex, Uber Eats, Sephora, Best Buy, Apple, $5 to $500. Bought only when the card is delivered; if it can't be bought, the card still goes and the gift is refunded.
+- **Yearly cards** now wait for a $1 confirm each year (reminder email a week before), since cards can't be charged automatically without saving them.
+- Receipts by email; no account needed to buy (the receipt link signs you in).
+
+### Money notes (decide these)
+
+- Square takes about **2.9% + 30¢** per online payment, so a lone $1 card nets about **67¢**. Options: card packs (10 for $8), or a small minimum.
+- On a $50 gift, Square's cut is about **$1.75**. `giftServiceFeePercent` in `src/config/pricing.ts` can pass that on (0% today).
+- Tremendous doesn't charge a fee for most gift cards, but you pre-fund a balance with them.
+- Taxes on the $1 fee: `cardTaxPercent` (0 today). Ask an accountant once revenue passes the $30k small-supplier threshold.
+
 ## Phase 2: next up
 
 1. **Name and domain**: pick the name, register the domain, point DNS at the home IP (same as Coastline).
@@ -62,12 +78,15 @@ Each app runs in its own folder with its own `docker compose`. Adding a third si
 ## Phase 3: making money
 
 - **Free**: 3 scheduled cards at a time, all basic designs.
-- **Premium** (around $3/month or $24/year, via Square like Coastline): unlimited scheduling, premium designs, photo cards, voice notes, custom handwriting font.
+- **Card packs**: 10 cards for $8, to cut Square's per-payment fee.
+- **Premium designs**: photo cards, voice notes, a custom handwriting font.
+- **Coastline Prints / LightLab gift cards** as a gift option (your own, no middleman).
 - **Printed cards by mail**: real paper cards printed and posted on the day (Canada Post), around $5.99 each. This is the bigger business and pairs with Coastline's shipping code.
 - **Gift cards inside cards**: attach a Coastline/LightLab gift card or a partner gift card.
 
 ## Open questions for you
 
 - Which name?
-- Free to start, or charge from day one?
+- Keep $1 a card, or sell packs to avoid Square's 30¢ per payment?
+- Pass the gift card processing fee on, or absorb it?
 - Digital only for now (built), or add printed mailed cards soon?

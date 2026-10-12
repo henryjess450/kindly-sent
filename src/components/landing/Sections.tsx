@@ -6,6 +6,9 @@ import { motion, useInView, AnimatePresence } from "motion/react";
 import { CardArt } from "../CardArt";
 import { Envelope } from "../Envelope";
 import { DESIGNS, getDesign } from "@/lib/designs";
+import { GiftTile } from "../GiftTile";
+import { GIFT_BRANDS } from "@/config/gifts";
+import { money, pricing } from "@/config/pricing";
 
 const rise = {
   initial: { opacity: 0, y: 40 },
@@ -23,9 +26,9 @@ export function Gallery() {
       <div className="wrap">
         <motion.div {...rise}>
           <p className="eyebrow">The cards</p>
-          <h2 className="display display-l" style={{ maxWidth: 720 }}>Drawn by hand. Never a stock photo.</h2>
+          <h2 className="display display-l" style={{ maxWidth: 760 }}>{DESIGNS.length} cards. Drawn by hand. All alive.</h2>
           <p className="lede" style={{ maxWidth: 620, marginTop: 16 }}>
-            Every design is illustrated line by line, and a few of them move: the candle flickers, the heart beats, the sun turns.
+            Every design is illustrated line by line, and every one of them moves: the candle flickers, the snow falls, the mobile turns over the crib.
           </p>
         </motion.div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "36px 0 28px" }}>
@@ -114,7 +117,7 @@ export function HowItWorks() {
   const ref = useRef<HTMLDivElement>(null);
   const seen = useInView(ref, { once: true, margin: "-120px" });
   const steps = [
-    { title: "Write it now", body: "Pick a design, write in your own words, and choose handwriting, classic or modern lettering.", art: <div className="mini-card"><Typing start={seen} text="Proud of you, always." /></div> },
+    { title: "Write it now", body: "Pick a design, write in your own words, then choose the lettering, the ink and the envelope.", art: <div className="mini-card"><Typing start={seen} text="Proud of you, always." /></div> },
     { title: "Pick the minute", body: "Their birthday at 7:00 AM in their time zone. Your anniversary at dinner. Any date up to five years out.", art: <Clock start={seen} /> },
     { title: "We seal and deliver", body: "It arrives by email in a sealed envelope they open with a tap. You get a note when it lands, and when they open it.", art: <SealDemo start={seen} /> },
   ];
@@ -234,12 +237,91 @@ export function Notifications() {
 
 export function FinalCta() {
   return (
-    <section className="section center" style={{ background: "var(--bg-alt)" }}>
+    <section className="section center">
       <motion.div {...rise} className="wrap">
         <h2 className="display display-l">Someone&apos;s day is coming up.</h2>
-        <p className="lede" style={{ margin: "16px auto 30px", maxWidth: 520 }}>Write it while you&apos;re thinking of them. It takes about two minutes.</p>
+        <p className="lede" style={{ margin: "16px auto 30px", maxWidth: 520 }}>Write it while you&apos;re thinking of them. Two minutes and {money(pricing.cardCents)}.</p>
         <Link href="/send" className="btn btn-brand">Write a card</Link>
       </motion.div>
+    </section>
+  );
+}
+
+export function Gifts() {
+  const fan = GIFT_BRANDS.slice(1, 6);
+  return (
+    <section className="section" style={{ overflow: "hidden" }}>
+      <div className="wrap gifts-grid">
+        <motion.div {...rise}>
+          <p className="eyebrow">Gift cards</p>
+          <h2 className="display display-l">Tuck a gift inside.</h2>
+          <p className="lede" style={{ marginTop: 16 }}>
+            Add a gift card from Amazon, Tim Hortons, Starbucks, Indigo and more. It slides out when they open the card, ready to use.
+          </p>
+          <p className="muted" style={{ marginTop: 14, fontSize: 15 }}>
+            We buy it the moment the card is delivered, so if plans change, cancelling is a full refund.
+          </p>
+        </motion.div>
+        <div className="fan">
+          {fan.map((b, i) => (
+            <motion.div
+              key={b.id}
+              className="fan-card"
+              initial={{ opacity: 0, y: 120, rotate: 0 }}
+              whileInView={{ opacity: 1, y: 0, rotate: (i - 2) * 9 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ type: "spring", stiffness: 120, damping: 16, delay: 0.1 + i * 0.09 }}
+              style={{ zIndex: i, x: (i - 2) * 46 }}
+            >
+              <GiftTile brand={b} amountCents={[2500, 5000, 1000, 2500, 10000][i]} width={230} />
+            </motion.div>
+          ))}
+        </div>
+      </div>
+      <style>{`
+        .gifts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+        @media (max-width: 860px) { .gifts-grid { grid-template-columns: 1fr; } }
+        .fan { position: relative; height: 320px; display: grid; place-items: center; }
+        .fan-card { position: absolute; transform-origin: 50% 160%; }
+        @media (max-width: 480px) { .fan { transform: scale(.8); } }
+      `}</style>
+    </section>
+  );
+}
+
+export function Pricing() {
+  return (
+    <section className="section center" style={{ background: "var(--bg-alt)" }}>
+      <motion.div {...rise} className="wrap">
+        <p className="eyebrow">Pricing</p>
+        <motion.h2
+          className="display"
+          style={{ fontSize: "clamp(96px, 18vw, 220px)", letterSpacing: "-0.06em" }}
+          initial={{ scale: 0.7, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ type: "spring", stiffness: 120, damping: 14 }}
+        >
+          {money(pricing.cardCents)}
+        </motion.h2>
+        <p className="lede" style={{ maxWidth: 560, margin: "8px auto 0" }}>
+          Per card. No subscription, no account fee. Every design, every option, and a full refund if you cancel before it goes out.
+        </p>
+        <div className="price-points">
+          {["Any of the " + DESIGNS.length + " animated designs", "Your choice of writing, ink and envelope", "Delivered to the minute, in their time zone", "Know when it lands and when it's opened"].map((t, i) => (
+            <motion.div key={t} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.08 }}>
+              <span className="tick">✓</span>
+              {t}
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+      <style>{`
+        .price-points { display: grid; grid-template-columns: repeat(2, minmax(0, 300px)); gap: 14px 28px; justify-content: center; margin-top: 40px; text-align: left; font-size: 16px; }
+        @media (max-width: 640px) { .price-points { grid-template-columns: 1fr; } }
+        .price-points > div { display: flex; gap: 10px; align-items: baseline; }
+        .tick { color: var(--brand); font-weight: 800; }
+      `}</style>
     </section>
   );
 }

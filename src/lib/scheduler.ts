@@ -1,9 +1,12 @@
 import { existsSync, readdirSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import { getDb, type CardRow, type UserRow } from "./db";
-import { cardArrivedEmail, deliveredEmail, failedEmail } from "./emails";
+import { cardArrivedEmail, deliveredEmail, failedEmail, giftProblemEmail, renewEmail } from "./emails";
 import { sendMail } from "./mail";
 import { insertCard } from "./cards";
+import { getGift, issueGift } from "./giftcards";
+import { getPayment, refund } from "./payments";
+import { quote } from "@/config/pricing";
 import { nextYearDate, zonedToUtc } from "./time";
 
 const TICK_MS = 15_000;
@@ -42,6 +45,7 @@ export async function tick() {
       if (claim.changes !== 1) continue;
       await deliver(card);
     }
+    await renewals();
     backupDaily();
   } catch (err) {
     console.error("[scheduler]", err);
@@ -65,18 +69,36 @@ function backupDaily() {
 
 async function deliver(card: CardRow) {
   const db = getDb();
-  const sender = card.user_id ? (db.prepare("SELECT * FROM users WHERE id = ?").get(card.user_id) as UserRow | undefined) : undefined;
+  const senderEmail =
+    card.sender_email ?? (card.user_id ? (db.prepare("SELECT email FROM users WHERE id = ?").get(card.user_id) as Pick<UserRow, "email"> | undefined)?.email : undefined);
+  const attempts = card.attempts + 1;
   try {
-    await sendMail({ to: card.recipient_email, ...cardArrivedEmail(card) });
+    // Buy the gift card first. If that keeps failing, send the card without it and refund the gift.
+    let gift = getGift(card.id);
+    if (gift?.status === "held") {
+      try {
+        await issueGift(gift, card);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        db.prepare("UPDATE gifts SET error = ? WHERE id = ?").run(message, gift.id);
+        if (attempts < MAX_ATTEMPTS - 1) throw err;
+        db.prepare("UPDATE gifts SET status = 'failed' WHERE id = ?").run(gift.id);
+        const pay = getPayment(card.payment_id);
+        const refundCents = pay ? pay.gift_cents + pay.fee_cents : 0;
+        if (pay) await refund(pay, refundCents, "gift-failed").catch((e) => console.error("[refund]", e));
+        if (senderEmail) await sendMail({ to: senderEmail, ...giftProblemEmail(card, gift) }).catch(() => {});
+      }
+      gift = getGift(card.id);
+    }
+    await sendMail({ to: card.recipient_email, ...cardArrivedEmail(card, gift) });
     db.prepare("UPDATE cards SET status = 'sent', sent_at = ?, last_error = NULL WHERE id = ?").run(Date.now(), card.id);
-    if (card.repeat === "yearly") scheduleNextYear(card);
-    if (sender) await sendMail({ to: sender.email, ...deliveredEmail(card) }).catch(() => {});
+    if (card.repeat === "yearly") scheduleNextYear(card, senderEmail);
+    if (senderEmail) await sendMail({ to: senderEmail, ...deliveredEmail(card) }).catch(() => {});
   } catch (err) {
-    const attempts = card.attempts + 1;
     const message = err instanceof Error ? err.message : String(err);
     if (attempts >= MAX_ATTEMPTS) {
       db.prepare("UPDATE cards SET status = 'failed', attempts = ?, last_error = ? WHERE id = ?").run(attempts, message, card.id);
-      if (sender) await sendMail({ to: sender.email, ...failedEmail(card) }).catch(() => {});
+      if (senderEmail) await sendMail({ to: senderEmail, ...failedEmail(card) }).catch(() => {});
     } else {
       const wait = BACKOFF_MIN[attempts - 1] * 6e4;
       db.prepare("UPDATE cards SET status = 'scheduled', attempts = ?, last_error = ?, next_attempt_at = ? WHERE id = ?").run(attempts, message, Date.now() + wait, card.id);
@@ -85,17 +107,33 @@ async function deliver(card: CardRow) {
   }
 }
 
-function scheduleNextYear(card: CardRow) {
-  if (!card.user_id) return;
+/** Next year's copy waits for a $1 confirm; the sender is reminded a week before. */
+function scheduleNextYear(card: CardRow, senderEmail: string | undefined) {
+  if (!senderEmail) return;
   const date = nextYearDate(card.local_date);
+  const q = quote(0);
   insertCard(
     {
-      design: card.design, font: card.font, message: card.message,
+      design: card.design, font: card.font, ink: card.ink, envelope: card.envelope, liner: card.liner, message: card.message,
       recipientName: card.recipient_name, recipientEmail: card.recipient_email, senderName: card.sender_name,
       date, time: card.local_time, timezone: card.timezone, repeat: "yearly", sendNow: false,
     },
     zonedToUtc(date, card.local_time, card.timezone),
-    { userId: card.user_id },
-    card.parent_id ?? card.id,
+    { userId: card.user_id, email: senderEmail },
+    { status: "unpaid", priceCents: q.card + q.cardTax, parentId: card.parent_id ?? card.id },
   );
+}
+
+async function renewals() {
+  const db = getDb();
+  const now = Date.now();
+  const due = db
+    .prepare("SELECT * FROM cards WHERE status = 'unpaid' AND reminder_sent_at IS NULL AND send_at > ? AND send_at < ? AND sender_email IS NOT NULL")
+    .all(now, now + 7 * 864e5) as CardRow[];
+  for (const c of due) {
+    db.prepare("UPDATE cards SET reminder_sent_at = ? WHERE id = ?").run(now, c.id);
+    await sendMail({ to: c.sender_email!, ...renewEmail(c) }).catch(() => {});
+  }
+  // A yearly card nobody confirmed simply doesn't go out.
+  db.prepare("UPDATE cards SET status = 'canceled' WHERE status = 'unpaid' AND send_at < ? AND created_at < ?").run(now, now - 3600e3);
 }

@@ -6,6 +6,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { Card3D, type CardContent } from "./Card3D";
 import { Envelope } from "./Envelope";
 import { Particles } from "./Particles";
+import { GiftTile } from "./GiftTile";
+import { getGiftBrand } from "@/config/gifts";
 import type { Design } from "@/lib/designs";
 import { useViewport } from "@/lib/useViewport";
 
@@ -16,7 +18,26 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * Sealed envelope -> seal pops -> flap lifts -> card slides out sideways,
  * turns upright and comes forward -> opens -> celebration.
  */
-export function OpenCard({ design, content, token, preview }: { design: Design; content: CardContent; token: string; preview: boolean }) {
+type Gift = { brand: string; amountCents: number; redeemUrl: string | null } | null;
+
+export function OpenCard({
+  design,
+  content,
+  token,
+  preview,
+  envelope,
+  liner,
+  gift,
+}: {
+  design: Design;
+  content: CardContent;
+  token: string;
+  preview: boolean;
+  envelope: string;
+  liner: string;
+  gift: Gift;
+}) {
+  const brand = gift ? getGiftBrand(gift.brand) : undefined;
   const vp = useViewport();
   const [stage, setStage] = useState<Stage>("sealed");
   const book = vp.w >= 760;
@@ -41,10 +62,10 @@ export function OpenCard({ design, content, token, preview }: { design: Design; 
   const scale = w / (ew * 0.94);
 
   return (
-    <div className="open-stage" onClick={open} style={{ cursor: stage === "sealed" ? "pointer" : "default", background: envGone ? design.envelope : "var(--bg-alt)" }}>
+    <div className="open-stage" onClick={open} style={{ cursor: stage === "sealed" ? "pointer" : "default", background: envGone ? envelope : "var(--bg-alt)" }}>
       <AnimatePresence>
         {stage === "sealed" && (
-          <motion.div className="open-caption" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.6, delay: 0.3 }}>
+          <motion.div key="caption" className="open-caption" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.6, delay: 0.3 }}>
             <p className="eyebrow" style={{ color: "var(--ink-3)" }}>{preview ? "Preview" : "You have a card"}</p>
             <h1 className="display display-m">For {content.recipientName}</h1>
           </motion.div>
@@ -59,7 +80,7 @@ export function OpenCard({ design, content, token, preview }: { design: Design; 
             animate={envGone ? { y: vp.h * 0.7, opacity: 0, rotate: 4 } : stage === "sealed" ? { y: [0, -8, 0] } : { y: 0 }}
             transition={envGone ? { duration: 0.8, ease: [0.55, 0, 0.75, 0.3] } : stage === "sealed" ? { duration: 3.2, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 }}
           >
-            <Envelope design={design} width={ew} flapOpen={stage !== "sealed"} seal={stage === "sealed"} sealLetter={letter}>
+            <Envelope design={design} width={ew} color={envelope} liner={liner} flapOpen={stage !== "sealed"} seal={stage === "sealed"} sealLetter={letter}>
               {!envGone && (
                 <div className="ks-env-card" style={{ transform: "translate(-50%, -50%)" }}>
                   <motion.div
@@ -90,13 +111,26 @@ export function OpenCard({ design, content, token, preview }: { design: Design; 
 
       <AnimatePresence>
         {stage === "sealed" && (
-          <motion.button className="btn btn-primary open-cta" onClick={open} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: 0.6 }}>
+          <motion.button key="tap" className="btn btn-primary open-cta" onClick={open} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: 0.6 }}>
             Tap to open
           </motion.button>
         )}
         {stage === "open" && (
-          <motion.div className="open-cta" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.6, duration: 0.6 }} style={{ display: "flex", gap: 10 }}>
-            <Link href="/send" className="btn btn-primary">Send one back</Link>
+          <motion.div key="cta" className="open-cta" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: brand ? 3 : 1.6, duration: 0.6 }} style={{ display: "flex", gap: 10 }}>
+            {brand && gift?.redeemUrl && <a href={gift.redeemUrl} target="_blank" rel="noopener noreferrer" className="btn btn-brand">Redeem your gift</a>}
+            <Link href="/send" className={brand ? "btn btn-ghost" : "btn btn-primary"} style={brand ? { background: "rgba(255,255,255,.8)" } : undefined}>Send one back</Link>
+          </motion.div>
+        )}
+        {stage === "open" && brand && gift && (
+          <motion.div
+            key="gift"
+            className="open-gift"
+            initial={{ y: 260, rotate: -8, opacity: 0 }}
+            animate={{ y: 0, rotate: -4, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 90, damping: 14, delay: 1.9 }}
+          >
+            <GiftTile brand={brand} amountCents={gift.amountCents} width={Math.min(250, vp.w * 0.6)} from={content.senderName.replace(/^(love|from|xo)[,\s]+/i, "")} />
+            {preview && <p className="hint" style={{ textAlign: "center", marginTop: 10 }}>Bought and attached when the card is delivered.</p>}
           </motion.div>
         )}
       </AnimatePresence>
@@ -110,6 +144,8 @@ export function OpenCard({ design, content, token, preview }: { design: Design; 
         .open-env { position: absolute; transform-origin: center; translate: -50% -50%; z-index: 3; }
         .open-card-layer { position: absolute; left: 0; top: 0; translate: -50% -50%; z-index: 6; }
         .open-card-layer .ks-card-stage { margin: 0; }
+        .open-gift { position: absolute; right: max(24px, calc(50% - ${book ? w * 1.25 : w * 0.7}px)); bottom: 14vh; z-index: 35; }
+        @media (max-width: 760px) { .open-gift { right: 50%; translate: 50% 0; bottom: 15vh; } }
         .open-cta { position: absolute; bottom: 7vh; left: 50%; translate: -50% 0; z-index: 40; }
       `}</style>
     </div>

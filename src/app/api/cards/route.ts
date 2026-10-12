@@ -1,33 +1,55 @@
 import { NextResponse } from "next/server";
+import { quote } from "@/config/pricing";
 import { site } from "@/config/site";
-import { cardsCreatedToday, insertCard, parseCard, publicCard } from "@/lib/cards";
-import { loginEmail } from "@/lib/emails";
+import { cardsCreatedToday, getCard, insertCard, insertGift, parseCard, parseGift, publicCard } from "@/lib/cards";
+import { getDb } from "@/lib/db";
+import { receiptEmail } from "@/lib/emails";
+import { getGift } from "@/lib/giftcards";
 import { sendMail } from "@/lib/mail";
+import { charge, PaymentError } from "@/lib/payments";
 import { createLoginLink, getUser, normalizeEmail } from "@/lib/session";
 import { tick } from "@/lib/scheduler";
 
+// Write, pay, schedule. Nothing is saved as "scheduled" until the payment succeeds.
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const parsed = parseCard(body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
+  const gift = parseGift(body);
+  if (!gift.ok) return NextResponse.json({ error: gift.error }, { status: 400 });
   const user = await getUser();
+  const email = user?.email ?? normalizeEmail(body.email);
+  if (!email) return NextResponse.json({ error: "Add your email for the receipt." }, { status: 400 });
+  if (cardsCreatedToday(user?.id ?? null, email) >= site.limits.cardsPerDay)
+    return NextResponse.json({ error: "That's a lot of cards for one day. Try again tomorrow." }, { status: 429 });
+  const sourceId = typeof body.paymentToken === "string" ? body.paymentToken : "";
+  if (!sourceId) return NextResponse.json({ error: "Add a payment method." }, { status: 400 });
 
-  if (user) {
-    if (cardsCreatedToday(user.id, user.email) >= site.limits.cardsPerDay)
-      return NextResponse.json({ error: "That's a lot of cards for one day. Try again tomorrow." }, { status: 429 });
-    const card = insertCard(parsed.card, parsed.sendAt, { userId: user.id });
-    if (parsed.card.sendNow) void tick();
-    return NextResponse.json({ status: "scheduled", card: publicCard(card) });
+  const q = quote(gift.gift?.amountCents ?? 0);
+  const card = insertCard(parsed.card, parsed.sendAt, { userId: user?.id ?? null, email }, { status: "unpaid", priceCents: q.card + q.cardTax });
+  if (gift.gift) insertGift(card.id, gift.gift);
+
+  let payment;
+  try {
+    payment = await charge({
+      sourceId,
+      key: card.id,
+      email,
+      note: `Card to ${parsed.card.recipientName}${gift.gift ? ` + ${gift.gift.brand} gift` : ""}`,
+      amounts: { cardCents: q.card, taxCents: q.cardTax, giftCents: q.gift, feeCents: q.giftFee, totalCents: q.total },
+    });
+  } catch (err) {
+    getDb().prepare("DELETE FROM cards WHERE id = ?").run(card.id);
+    const msg = err instanceof PaymentError ? err.message : "The payment didn't go through. Nothing was charged.";
+    if (!(err instanceof PaymentError)) console.error("[pay]", err);
+    return NextResponse.json({ error: msg }, { status: 402 });
   }
 
-  // Not signed in: hold the card until they confirm their email.
-  const email = normalizeEmail(body.email);
-  if (!email) return NextResponse.json({ error: "Add your email so we can confirm it's you." }, { status: 400 });
-  if (cardsCreatedToday(null, email) >= site.limits.cardsPerDay)
-    return NextResponse.json({ error: "That's a lot of cards for one day. Try again tomorrow." }, { status: 429 });
-  const card = insertCard(parsed.card, parsed.sendAt, { pendingEmail: email });
-  const link = createLoginLink(email, { cardId: card.id });
-  if (!link) return NextResponse.json({ error: "We've sent a few links already. Check your inbox, or try again in an hour." }, { status: 429 });
-  await sendMail({ to: email, ...loginEmail(link, card) });
-  return NextResponse.json({ status: "pending", card: publicCard(card) });
+  getDb().prepare("UPDATE cards SET status = 'scheduled', payment_id = ? WHERE id = ?").run(payment.id, card.id);
+  const saved = getCard(card.id)!;
+  // Signed in: link straight to the list. Not signed in: the link signs them in too.
+  const manage = user ? `${site.url}/cards` : (createLoginLink(email, { next: "/cards" }) ?? `${site.url}/signin`);
+  await sendMail({ to: email, ...receiptEmail(saved, payment, getGift(card.id), manage) }).catch((e) => console.error("[receipt]", e));
+  if (parsed.card.sendNow) void tick();
+  return NextResponse.json({ status: "scheduled", card: publicCard(saved) });
 }
