@@ -88,6 +88,9 @@ function Dino({ d }: ArtProps) {
       <ellipse cx={300} cy={404} rx={12} ry={22} fill="#6AB35A" transform="rotate(-30 300 404)" />
       <ellipse cx={240} cy={512} rx={130} ry={10} fill={d.ink} opacity={0.12} />
       <g style={anim("ks-bob", 2.6, { origin: "50% 100%" })}>
+        {/* Neck: from the shoulders up to the head, which sits a little higher. */}
+        <path d="M290 352 C 296 318, 306 290, 322 262" stroke={green} strokeWidth={56} strokeLinecap="round" fill="none" />
+        <g transform="translate(0 -40)">
         <circle cx={326} cy={286} r={58} fill={green} />
         <ellipse cx={366} cy={304} rx={46} ry={34} fill={green} />
         <circle cx={392} cy={294} r={3} fill={d.ink} />
@@ -98,6 +101,7 @@ function Dino({ d }: ArtProps) {
         <path d="M296 238 L322 142 L354 232 Z" fill={d.accent} />
         <path d="M304 210 L344 202 L348 214 L302 222 Z M313 178 L334 174 L338 186 L310 190 Z" fill="#FFC53D" />
         <circle cx={322} cy={140} r={13} fill="#4AA3FF" />
+        </g>
       </g>
       <Kicker y={590} fill={d.ink}>Have a roarsome</Kicker>
       <Title y={642} fill={d.ink}>Birthday</Title>

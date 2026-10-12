@@ -9,8 +9,8 @@ export default async function Designs({ searchParams }: { searchParams: Promise<
   const shown = ids ? ids.split(",").map((id) => DESIGNS.find((d) => d.id === id)!).filter(Boolean) : DESIGNS.slice(Number(from), Number(from) + Number(n));
   return (
     <main style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 10, padding: 10, background: "#e8e8ed" }}>
-      {shown.map((d) => (
-        <figure key={d.id} style={{ margin: 0 }}>
+      {shown.map((d, i) => (
+        <figure key={`${d.id}-${i}`} style={{ margin: 0 }}>
           <div style={{ aspectRatio: "5/7", borderRadius: 4, overflow: "hidden" }}>
             <CardArt design={d} />
           </div>
