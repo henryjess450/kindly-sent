@@ -10,6 +10,8 @@ import type { PublicCard } from "@/lib/cards";
 import { useViewport } from "@/lib/useViewport";
 import { sealLetter } from "@/lib/names";
 import { SendJourney } from "../journey/SendJourney";
+import { PostmarkMark } from "../confirm/PaidMarks";
+import { money } from "@/config/pricing";
 
 type Phase = "drop" | "close" | "seal" | "fly" | "journey" | "done";
 
@@ -82,9 +84,20 @@ export function SendOff({
         </motion.div>
       ) : (
         <motion.div className="center" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} style={{ maxWidth: 560 }}>
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 18, delay: 0.1 }} style={{ width: 72, height: 72, borderRadius: "50%", background: design.accent, color: "#fff", display: "grid", placeItems: "center", fontSize: 30, fontWeight: 800, margin: "0 auto 24px", fontFamily: "var(--font-display)" }}>
-            {letter}
-          </motion.div>
+          {edited ? (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 18, delay: 0.1 }} style={{ width: 72, height: 72, borderRadius: "50%", background: design.accent, color: "#fff", display: "grid", placeItems: "center", fontSize: 30, fontWeight: 800, margin: "0 auto 24px", fontFamily: "var(--font-display)" }}>
+              {letter}
+            </motion.div>
+          ) : (
+            <div style={{ display: "grid", placeItems: "center", margin: "0 auto 20px" }}>
+              <PostmarkMark
+                amount={result.card.priceCents > 0 ? money(result.card.priceCents) : "FREE"}
+                accent={design.accent}
+                to={result.card.recipientName}
+                date={new Date(result.card.sendAt).toLocaleDateString("en-CA", { timeZone: result.card.timezone, month: "short", day: "numeric" })}
+              />
+            </div>
+          )}
           {result.status === "pending" ? (
             <>
               <h1 className="display display-m">Sealed. One more tap.</h1>
