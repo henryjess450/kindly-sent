@@ -80,7 +80,7 @@ function Dino({ d }: ArtProps) {
       <g style={anim("ks-sway", 1.3, { ...pivot(160, 430), vars: { "--amp": "9deg" } })}>
         <path d="M168 400 C 120 410, 80 390, 58 340 C 90 376, 130 392, 176 460 Z" fill={green} />
       </g>
-      {[200, 250, 290].map((x, i) => <path key={i} d={`M${x - 18} ${322 - i * 4} l18 -30 l18 32 Z`} fill={d.accent} />)}
+      {[[160, 356], [196, 332], [232, 324]].map(([x, y], i) => <path key={i} d={`M${x - 18} ${y} l18 -30 l18 32 Z`} fill={d.accent} />)}
       <rect x={180} y={450} width={36} height={56} rx={14} fill="#6AB35A" />
       <rect x={270} y={450} width={36} height={56} rx={14} fill="#6AB35A" />
       <ellipse cx={240} cy={408} rx={104} ry={88} fill={green} />
@@ -88,8 +88,8 @@ function Dino({ d }: ArtProps) {
       <ellipse cx={300} cy={404} rx={12} ry={22} fill="#6AB35A" transform="rotate(-30 300 404)" />
       <ellipse cx={240} cy={512} rx={130} ry={10} fill={d.ink} opacity={0.12} />
       <g style={anim("ks-bob", 2.6, { origin: "50% 100%" })}>
-        {/* Neck: from the shoulders up to the head, which sits a little higher. */}
-        <path d="M290 352 C 296 318, 306 290, 322 262" stroke={green} strokeWidth={56} strokeLinecap="round" fill="none" />
+        {/* Neck: rises from the top of the body up into the head. */}
+        <path d="M232 352 C 242 306, 266 280, 290 258 L 348 282 C 330 302, 318 324, 316 352 Z" fill={green} />
         <g transform="translate(0 -40)">
         <circle cx={326} cy={286} r={58} fill={green} />
         <ellipse cx={366} cy={304} rx={46} ry={34} fill={green} />
