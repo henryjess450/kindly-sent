@@ -3,7 +3,7 @@
 Schedule greeting cards to arrive at the exact minute you choose.
 
 - Plan and roadmap: [PLAN.md](PLAN.md)
-- Running it on the PC next to Coastline Prints: [DEPLOY.md](DEPLOY.md)
+- Running it on the PC next to Coastline Prints: [DEPLOY.md](DEPLOY.md) (the shared HTTPS front door is in [edge/](edge/))
 
 ## Develop
 

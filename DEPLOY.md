@@ -1,51 +1,56 @@
 # Running Kindly Sent next to Coastline Prints
 
-Everything below happens on the Windows PC in PowerShell. It takes about 15 minutes, and coastlineprints.ca is offline for about a minute in step 4.
+Everything below happens on the Windows PC in PowerShell. coastlineprints.ca is offline for about a minute in step 4.
+
+## How it fits together
+
+Only one program can use ports 80 and 443, so a single Caddy (the `edge` folder in this repo) answers for every domain and passes each one to the right app over a shared Docker network called `web`:
+
+```
+router :80/:443 → edge (Caddy) ─┬─ coastlineprints.ca → Coastline app (port 3100)
+                                └─ kindlysent.ca      → Kindly Sent app (port 3200)
+```
 
 ## 1. Point the domain at the PC
 
-At your domain registrar, add the same records Coastline uses:
+In WordPress.com → Upgrades → Domains → kindlysent.ca → DNS records, copy what coastlineprints.ca has:
 
 | Type | Name | Value |
 | --- | --- | --- |
-| A | @ | 24.68.229.116 |
+| A | @ | your home IP (the same one coastlineprints.ca uses) |
 | CNAME | www | kindlysent.ca |
 
-Your router already forwards ports 80 and 443 to the PC, so nothing changes there.
+Delete WordPress's own A records (they start with `192.0.78.`). Your router already forwards 80 and 443 to the PC.
 
-## 2. Copy the folders to the PC
-
-You need two new folders:
-
-- `C:\kindly-sent` (this project)
-- `C:\edge` (the shared Caddy, from `../edge`)
-
-## 3. Fill in settings
+## 2. Download it
 
 ```powershell
+cd C:\
+git clone https://github.com/henryjess450/kindly-sent.git
 cd C:\kindly-sent
 copy .env.example .env
 notepad .env
 ```
 
-Set `SITE_URL=https://kindlysent.ca` and the email settings. A Gmail App Password works the same way as Coastline's.
+For the first start you only need `SITE_URL=https://kindlysent.ca`. Leave the rest blank: the site loads, and email and payments get switched on in the settings round.
 
-**Payments (Square).** Use a separate Square application from Coastline so the money and reports stay apart (same Square account is fine). In the Square Developer Dashboard: create an app, copy the **Application ID**, **Access token** and **Location ID** into `.env`. Start with `SQUARE_ENV=sandbox` and the sandbox values, buy a card with Square's test card `4111 1111 1111 1111`, then switch to production values. For Apple Pay, register `kindlysent.ca` under the app's Apple Pay settings.
-
-## 4. Switch to the shared Caddy
-
-This is the only step that touches Coastline. Its `docker-compose.yml` no longer starts its own Caddy; it joins the shared `web` network instead.
+## 3. Create the shared network (once)
 
 ```powershell
 docker network create web
+```
+
+## 4. Hand ports 80/443 to the shared Caddy
+
+```powershell
 cd C:\coastline-prints
 git pull
 docker compose up -d --build --remove-orphans
-cd C:\edge
+cd C:\kindly-sent\edge
 docker compose up -d
 ```
 
-`--remove-orphans` stops Coastline's old Caddy so the new one can take ports 80 and 443. Caddy gets fresh certificates in a few seconds. Check https://coastlineprints.ca loads before moving on.
+`--remove-orphans` stops Coastline's old Caddy so the shared one can take the ports. It gets HTTPS certificates in a few seconds. Check https://coastlineprints.ca works before going on.
 
 ## 5. Start Kindly Sent
 
@@ -54,21 +59,31 @@ cd C:\kindly-sent
 docker compose up -d --build
 ```
 
-Check http://localhost:3200 on the PC, then https://kindlysent.ca from your phone (off Wi-Fi).
+Check http://localhost:3200 on the PC, then https://kindlysent.ca from your phone with Wi-Fi off.
 
 ## Everyday commands
 
 | What | Command |
 | --- | --- |
-| Update Kindly Sent | `cd C:\kindly-sent; docker compose up -d --build` |
+| Update Kindly Sent | `cd C:\kindly-sent; git pull; docker compose up -d --build` |
 | Update Coastline | `cd C:\coastline-prints; git pull; docker compose up -d --build` |
-| See Kindly Sent logs | `cd C:\kindly-sent; docker compose logs -f` |
-| Reload Caddy after editing the Caddyfile | `cd C:\edge; docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile` |
-| Backups | `C:\kindly-sent\backups` (one per day, last 14) |
+| Kindly Sent logs | `cd C:\kindly-sent; docker compose logs -f` |
+| Caddy logs | `cd C:\kindly-sent\edge; docker compose logs -f` |
+| Reload Caddy after editing `edge\Caddyfile` | `cd C:\kindly-sent\edge; docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile` |
+| Backups | `C:\kindly-sent\backups` (one a day, last 14 kept) |
 
 ## If something goes wrong
 
-- **Coastline down after step 4**: run `cd C:\edge; docker compose logs caddy`. "connection refused" for `coastline-app` means Coastline didn't join the network; rerun `docker compose up -d` in `C:\coastline-prints`.
-- **"network web not found"**: run `docker network create web` once.
-- **Port 80 already in use**: the old Coastline Caddy is still running. `docker ps`, then `docker stop <name>`.
-- **Going back to the old setup**: `cd C:\edge; docker compose down`, then in `C:\coastline-prints` run `git checkout HEAD~1 -- docker-compose.yml; docker compose up -d`.
+- **"network web not found"**: run `docker network create web`.
+- **"port is already allocated" for 80/443**: Coastline's old Caddy is still running. `docker ps`, find the one named like `coastline-prints-caddy-1`, then `docker stop <name>` and start the edge again.
+- **coastlineprints.ca down after step 4**: `cd C:\kindly-sent\edge; docker compose logs caddy`. "connection refused" for `coastline-app` means Coastline didn't join the network; run `docker compose up -d` again in `C:\coastline-prints`.
+- **kindlysent.ca shows a certificate error**: DNS hasn't switched yet. Caddy keeps retrying; give it up to an hour after the DNS change.
+- **Going back to how it was**: `cd C:\kindly-sent\edge; docker compose down`, then in `C:\coastline-prints` run `git checkout HEAD~1 -- docker-compose.yml; docker compose up -d`.
+
+## Settings (after it's running)
+
+Fill these into `C:\kindly-sent\.env`, then `docker compose up -d` to apply:
+
+- **Email**: `SMTP_*` and `MAIL_FROM`. A Gmail App Password works, like Coastline.
+- **Payments**: a separate Square app (same Square account is fine). Copy the Application ID, Access token and Location ID into `SQUARE_*`. Test with `SQUARE_ENV=sandbox` and Square's test card `4111 1111 1111 1111`, then switch to production values. For Apple Pay, register `kindlysent.ca` in the app's Apple Pay settings.
+- **Admin**: `ADMIN_EMAILS` (your email).

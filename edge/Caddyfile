@@ -1,0 +1,33 @@
+# Every public site on this PC. Add a block per domain.
+
+# ---------- Coastline Prints ----------
+coastlineprints.ca {
+	encode zstd gzip
+	# STL uploads can be up to 100 MB.
+	request_body {
+		max_size 110MB
+	}
+	reverse_proxy coastline-app:3100
+}
+
+www.coastlineprints.ca {
+	redir https://coastlineprints.ca{uri} permanent
+}
+
+# ---------- Kindly Sent ----------
+kindlysent.ca {
+	encode zstd gzip
+	request_body {
+		max_size 1MB
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+	reverse_proxy kindly-sent:3200
+}
+
+www.kindlysent.ca {
+	redir https://kindlysent.ca{uri} permanent
+}

@@ -1,0 +1,29 @@
+# The front door for every site on this PC.
+# Caddy owns ports 80 and 443, gets HTTPS certificates, and sends each
+# domain to the right app over the shared "web" Docker network.
+#
+# Lives in C:\kindly-sent\edge on the PC.
+# One-time setup:   docker network create web
+# Start / update:   docker compose up -d
+# After editing Caddyfile:   docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data # HTTPS certificates
+      - caddy-config:/config
+    networks: [web]
+
+volumes:
+  caddy-data:
+  caddy-config:
+
+networks:
+  web:
+    external: true
