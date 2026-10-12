@@ -26,7 +26,7 @@ export function MailboxIntro({ recipientName, seal, onDone }: { recipientName: s
     const steps: [number, () => void][] = [
       [500, () => setDoor(true)],
       [800, () => setHere(true)],
-      [1000, () => { setWalking(true); setX(556); }],
+      [1000, () => { setWalking(true); setX(566); }],
       [2900, () => setWalking(false)],
       [3050, () => setBoxOpen(true)],
       [3450, () => { setHolding(true); setFound(true); setFlag(false); }],

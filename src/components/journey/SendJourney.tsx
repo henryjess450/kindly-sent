@@ -23,7 +23,7 @@ function Street({ seal }: { seal: string }) {
   const [carrying, setCarrying] = useState(false);
   const [x, setX] = useState(-80);
   useTimeline([
-    [1500, () => { setWalking(true); setX(352); }],
+    [1500, () => { setWalking(true); setX(372); }],
     [3400, () => setWalking(false)],
     [3550, () => setDoor(true)],
     [4050, () => setCarrying(true)],
@@ -40,7 +40,7 @@ function Street({ seal }: { seal: string }) {
       <g transform={`translate(430 ${GROUND})`}><StreetBox doorOpen={door} /></g>
       <motion.g
         initial={{ x: 140, y: 70, rotate: -24, scale: 1.5, opacity: 0 }}
-        animate={{ x: [140, 300, 430, 430], y: [70, 60, 188, 214], rotate: [-24, -8, 0, 0], scale: [1.5, 1.1, 0.8, 0.8], opacity: [0, 1, 1, 0] }}
+        animate={{ x: [140, 300, 430, 430], y: [70, 90, 290, 304], rotate: [-24, -8, 0, 0], scale: [1.2, 0.9, 0.45, 0.45], opacity: [0, 1, 1, 0] }}
         transition={{ duration: 1.4, times: [0, 0.35, 0.8, 1], ease: "easeInOut" }}
       >
         <Letter seal={seal} />
@@ -124,7 +124,7 @@ function Delivery({ seal }: { seal: string }) {
         <Truck driving={driving} />
       </motion.g>
       {stage === "drop" && (
-        <motion.g initial={{ x: 520, y: GROUND - 60, scale: 0.7 }} animate={{ x: [520, 560, 588], y: [GROUND - 60, GROUND - 170, GROUND - 100], scale: [0.7, 0.7, 0.4], opacity: [1, 1, 0] }} transition={{ duration: 0.8, ease: "easeInOut" }}>
+        <motion.g initial={{ x: 520, y: GROUND - 50, scale: 0.6 }} animate={{ x: [520, 560, 592], y: [GROUND - 50, GROUND - 120, GROUND - 52], scale: [0.6, 0.55, 0.25], opacity: [1, 1, 0] }} transition={{ duration: 0.8, ease: "easeInOut" }}>
           <Letter seal={seal} />
         </motion.g>
       )}

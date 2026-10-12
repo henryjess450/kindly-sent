@@ -8,6 +8,12 @@ import { useId } from "react";
 
 export const GROUND = 400;
 
+// Sizes relative to the house door (104 tall): a person is door height,
+// a street box comes up to their shoulders, a home mailbox to their chest.
+const PERSON = 0.72;
+const STREET_BOX = 0.5;
+const HOME_BOX = 0.55;
+
 /** A sealed envelope, centred on 0,0. */
 export function Letter({ seal = "#E5484D", paper = "#FFFDF6", w = 56 }: { seal?: string; paper?: string; w?: number }) {
   const h = w * 0.66;
@@ -28,7 +34,7 @@ export function StreetBox({ doorOpen }: { doorOpen: boolean }) {
   const id = useId().replace(/:/g, "");
   const codes = ["V8W", "K1A", "M5V", "H3B", "T2P", "B3H", "R3C", "S4P", "V6B", "E1C", "C1A", "A1C", "X1A", "Y1A", "J8Y", "L4K", "N2L", "P3E"];
   return (
-    <g>
+    <g transform={`scale(${STREET_BOX})`}>
       <rect x={-62} y={-44} width={124} height={44} rx={3} fill="#3A3F45" />
       {[-48, -32, -16, 0, 16, 32, 48].map((x) => <rect key={x} x={x - 3} y={-40} width={6} height={36} rx={2} fill="#2C3035" />)}
       <path d="M-72 -44 V-196 Q-72 -214 -54 -214 H54 Q72 -214 72 -196 V-44 Z" fill="#D7262E" />
@@ -66,7 +72,7 @@ export function Person({ look, walking, face = 1, holding }: { look: PersonLook;
   const run = walking ? "running" : "paused";
   const limb = (delay: number, origin: string) => ({ animation: `ks-walk .62s ease-in-out ${delay}s infinite`, animationPlayState: run, transformBox: "fill-box" as const, transformOrigin: origin });
   return (
-    <g transform={`scale(${face} 1)`}>
+    <g transform={`scale(${face * PERSON} ${PERSON})`}>
       <g style={{ animation: "ks-step .31s ease-in-out infinite", animationPlayState: run }}>
         <ellipse cx={0} cy={0} rx={22} ry={4} fill="#00000018" />
         <g style={limb(-0.31, "50% 0%")}><rect x={-9} y={-52} width={9} height={50} rx={4} fill={look.legs} /><rect x={-11} y={-6} width={15} height={6} rx={3} fill="#222" /></g>
@@ -144,7 +150,7 @@ export function Truck({ driving }: { driving: boolean }) {
 /** A curbside mailbox on a post; its door opens and its flag goes up or down. */
 export function HomeMailbox({ open, flagUp }: { open: boolean; flagUp: boolean }) {
   return (
-    <g>
+    <g transform={`scale(${HOME_BOX})`}>
       <rect x={-5} y={-92} width={10} height={92} fill="#6B4423" />
       <path d="M-34 -92 V-120 Q-34 -138 0 -138 Q34 -138 34 -120 V-92 Z" fill="#2F6FEB" />
       <g style={{ transformBox: "fill-box", transformOrigin: "50% 100%", transform: flagUp ? "rotate(0deg)" : "rotate(90deg)", transition: "transform .5s cubic-bezier(.34,1.56,.64,1)" }}>
