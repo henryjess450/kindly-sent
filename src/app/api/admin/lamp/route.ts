@@ -21,7 +21,8 @@ export async function POST(req: Request) {
   if (body.action === "play") {
     const anim = String(body.anim ?? "") as LampAnim;
     if (!LAMP_ANIM_IDS.includes(anim)) return NextResponse.json({ error: "Pick an animation." }, { status: 400 });
-    queueLamp([anim], "admin");
+    const dollars = Number(body.dollars);
+    queueLamp([anim], "admin", Number.isFinite(dollars) && dollars > 0 ? Math.round(Math.min(dollars, 48) * 100) : null);
     const online = lampPresence().online;
     return NextResponse.json({
       message: online ? "Sent to the lamp." : "Queued. The lamp is offline, so it plays if it's back within 10 minutes.",

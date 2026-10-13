@@ -10,9 +10,10 @@ type Show = LampAnim | "glow" | "off" | "none" | LampAnim[];
 
 /**
  * A drawing of the LED ring, playing the same frames the lamp does. LED 0
- * sits at the bottom. Pass a list to play several in turn.
+ * sits at the bottom. Pass a list to play several in turn; `amount` is the
+ * dollars the Payment animation counts out.
  */
-export function LampRing({ anim, size = 120 }: { anim: Show; size?: number }) {
+export function LampRing({ anim, size = 120, amount = 5 }: { anim: Show; size?: number; amount?: number }) {
   const dots = useRef<(HTMLSpanElement | null)[]>([]);
   const key = Array.isArray(anim) ? anim.join(",") : anim;
 
@@ -37,14 +38,14 @@ export function LampRing({ anim, size = 120 }: { anim: Show; size?: number }) {
       let u = t % total;
       for (const a of anims) {
         const d = LAMP_ANIMS[a].seconds;
-        if (u < d) return LAMP_ANIMS[a].frame(u);
+        if (u < d) return LAMP_ANIMS[a].frame(u, amount);
         u -= d + GAP_S;
         if (u < 0) break;
       }
       return dark();
     };
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
-      return paint(list[0] === "glow" ? screenGlow(0) : LAMP_ANIMS[anims[0]].frame(LAMP_ANIMS[anims[0]].seconds * 0.45));
+      return paint(list[0] === "glow" ? screenGlow(0) : LAMP_ANIMS[anims[0]].frame(LAMP_ANIMS[anims[0]].seconds * 0.7, amount));
     let raf = 0;
     const start = performance.now();
     const tick = (now: number) => {
@@ -53,7 +54,7 @@ export function LampRing({ anim, size = 120 }: { anim: Show; size?: number }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [key, size]);
+  }, [key, size, amount]);
 
   const dot = Math.max(7, Math.round(size / 9));
   const radius = size / 2 - dot / 2 - Math.max(4, size / 14);

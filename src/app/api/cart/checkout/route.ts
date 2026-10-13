@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     db.prepare("UPDATE group_cards SET status = 'collecting', payment_id = ?, price_cents = ?, owner_email = ?, cart_id = NULL WHERE id = ? AND status = 'draft'").run(payment.id, each, email, g.id);
     addAdmin(g.id, email, "owner");
   }
-  lampFor("group", groups.length);
+  lampFor("group", { count: groups.length, cents: q.subtotal });
   const paid = groups.map((g) => getGroup(g.id)!);
   const next = paid.length === 1 ? `/groups/${paid[0].id}` : "/cards";
   const manage = user ? `${site.url}${next}` : (createLoginLink(email, { next }) ?? `${site.url}/signin`);

@@ -39,7 +39,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
         amounts: { cardCents: q.card, taxCents: q.cardTax, totalCents: q.total },
       });
       getDb().prepare("UPDATE cards SET status = 'scheduled', payment_id = ?, price_cents = ? WHERE id = ?").run(p.id, q.total, card.id);
-      lampFor("renew");
+      lampFor("renew", { cents: q.card });
     } catch (err) {
       return NextResponse.json({ error: err instanceof PaymentError ? err.message : "The payment didn't go through." }, { status: 402 });
     }
@@ -65,5 +65,6 @@ export async function DELETE(_req: Request, { params }: Ctx) {
       return NextResponse.json({ ok: true, refunded: 0, error: "Cancelled, but the refund needs a hand. We'll sort it out by email." });
     }
   }
+  lampFor("canceled", { cents: refunded || null });
   return NextResponse.json({ ok: true, refunded });
 }

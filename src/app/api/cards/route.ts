@@ -58,7 +58,7 @@ export async function POST(req: Request) {
   }
 
   getDb().prepare("UPDATE cards SET status = 'scheduled', payment_id = ? WHERE id = ?").run(payment.id, card.id);
-  lampFor("card");
+  lampFor("card", { cents: q.card });
   const saved = getCard(card.id)!;
   // Signed in: link straight to the list. Not signed in: the link signs them in too.
   const manage = user ? `${site.url}/cards` : (createLoginLink(email, { next: "/cards" }) ?? `${site.url}/signin`);

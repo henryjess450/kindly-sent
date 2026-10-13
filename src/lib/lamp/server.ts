@@ -14,9 +14,11 @@ export const LAMP_EVENTS = [
   { key: "group", label: "A group card is bought" },
   { key: "free", label: "A free link is used" },
   { key: "renew", label: "A yearly card is renewed" },
+  { key: "paid", label: "A payment comes in (plays after the one above)" },
   { key: "signed", label: "Someone signs a group card" },
   { key: "delivered", label: "A card is delivered" },
   { key: "opened", label: "A card is opened" },
+  { key: "canceled", label: "A card is cancelled and refunded" },
 ] as const;
 export type LampEvent = (typeof LAMP_EVENTS)[number]["key"];
 
@@ -36,7 +38,17 @@ export type LampSettings = {
 export const LAMP_DEFAULTS: LampSettings = {
   brightness: 40,
   idle: "off",
-  play: { card: "sealed", group: "confetti", free: "sealed", renew: "bloom", signed: "ink", delivered: "airmail", opened: "heartbeat" },
+  play: {
+    card: "sealed",
+    group: "confetti",
+    free: "sealed",
+    renew: "bloom",
+    paid: "payment",
+    signed: "ink",
+    delivered: "airmail",
+    opened: "heartbeat",
+    canceled: "returned",
+  },
   milestone: { every: 25, anim: "fireworks" },
   quiet: { on: false, from: 22, to: 8 },
 };
@@ -152,18 +164,19 @@ export function waitForLamp(ms: number, signal: AbortSignal) {
 
 // ── Queueing ────────────────────────────────────────────────────────────
 
-export function queueLamp(anims: LampAnim[], reason: string) {
-  const insert = getDb().prepare("INSERT INTO lamp_events (anim, reason, created_at) VALUES (?, ?, ?)");
-  for (const a of anims) insert.run(a, reason, Date.now());
+/** `cents` is the sale it's for, which the Payment animation counts out. */
+export function queueLamp(anims: LampAnim[], reason: string, cents: number | null = null) {
+  const insert = getDb().prepare("INSERT INTO lamp_events (anim, reason, cents, created_at) VALUES (?, ?, ?, ?)");
+  for (const a of anims) insert.run(a, reason, cents, Date.now());
   // Keep the table small: the lamp only ever needs the last few minutes.
   getDb().prepare("DELETE FROM lamp_events WHERE id <= (SELECT MAX(id) FROM lamp_events) - 500").run();
   lamp.bus.dispatchEvent(new Event("queued"));
 }
 
-export type LampPlay = { id: number; anim: string; reason: string; at: number };
+export type LampPlay = { id: number; anim: string; reason: string; cents: number | null; at: number };
 
 export const recentPlays = (n = 12) =>
-  (getDb().prepare("SELECT id, anim, reason, created_at AS at FROM lamp_events ORDER BY id DESC LIMIT ?").all(n) as LampPlay[]).map((r) => ({ ...r }));
+  (getDb().prepare("SELECT id, anim, reason, cents, created_at AS at FROM lamp_events ORDER BY id DESC LIMIT ?").all(n) as LampPlay[]).map((r) => ({ ...r }));
 
 function inQuietHours(s: LampSettings, now = new Date()) {
   if (!s.quiet.on || s.quiet.from === s.quiet.to) return false;
@@ -184,21 +197,25 @@ function cardsBought() {
 
 /**
  * Something happened on the site: light the lamp. `count` is how many cards
- * it was (a cart can hold several group cards). Never throws: a lamp
- * problem must not break a checkout or a delivery.
+ * it was (a cart can hold several group cards); `cents` is the money taken
+ * (before tax) or refunded. A sale also plays the "paid" animation after
+ * its own, and a milestone after that. Never throws: a lamp problem must
+ * not break a checkout or a delivery.
  */
-export function lampFor(event: LampEvent, count = 1) {
+export function lampFor(event: LampEvent, { count = 1, cents = null }: { count?: number; cents?: number | null } = {}) {
   try {
     const s = getLampSettings();
     if (inQuietHours(s)) return;
     const anims: LampAnim[] = [];
-    if (s.play[event] !== "none") anims.push(s.play[event] as LampAnim);
+    const add = (c: LampChoice) => c !== "none" && anims.push(c);
+    add(s.play[event]);
+    if ((event === "card" || event === "group" || event === "renew") && cents) add(s.play.paid);
     if ((event === "card" || event === "group" || event === "free") && s.milestone.every > 0) {
       const n = cardsBought();
       // Crossed a multiple of `every` (a cart of 3 can jump from 24 to 27).
       if (Math.floor(n / s.milestone.every) > Math.floor((n - count) / s.milestone.every)) anims.push(s.milestone.anim);
     }
-    if (anims.length) queueLamp(anims, event);
+    if (anims.length) queueLamp(anims, event, cents);
   } catch (err) {
     console.error("[lamp]", err);
   }

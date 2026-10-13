@@ -1,7 +1,7 @@
 # The card lamp's animations, in Kindly Sent colours.
 #
 # Each animation is a function of t (seconds since it started) that returns
-# 12 (r, g, b) colours, one per LED. LED 0 is the bottom of the ring and
+# 12 (r, g, b) colours (Payment also takes the dollars), one per LED. LED 0 is the bottom of the ring and
 # height(i) counts up both sides to the top (LED 6). Every animation starts
 # and ends dark, so they chain and repeat without a flash.
 #
@@ -19,6 +19,8 @@ BUTTER = (247, 196, 80)  # the butter envelope
 SAGE = (110, 190, 120)  # the sage envelope
 SKY = (70, 150, 255)  # the sky envelope
 INK = (0, 113, 227)  # --blue
+GREEN = (48, 209, 88)  # money in
+FLAME = (255, 150, 40)  # the warm edge of a candle flame
 WHITE = (255, 255, 255)
 AMBER = (255, 140, 0)
 
@@ -202,6 +204,61 @@ def fireworks(t):
     return out
 
 
+# ── Payment: money came in ───────────────────────────────────────────────
+# The ring pulses green, then counts the sale out one LED per dollar from
+# the bottom: $1 is one LED, $5 is five, and leftover cents light the next
+# LED partly ($1.50 is one LED and a half-bright one). Past $12 the ring
+# stays faintly lit and the count goes round again in the next colour.
+LAPS = (GREEN, BUTTER, SKY, ROSE)
+
+
+def payment(t, n=5.0):
+    n = clamp(n, 0.01, 48.0)
+    pulse = math.sin(math.pi * clamp(t / 1.2)) ** 2
+    step = min(0.16, 2.6 / math.ceil(n))
+    lit = clamp((t - 1.3) / step, 0.0, n)
+    lap = min(int(lit // 12), int((n - 0.0001) // 12))
+    m = lit - 12 * lap
+    glint = 0.5 * clamp((t - 1.3) / 0.15) if lit < n else 0.0  # a sparkle on the LED being counted
+    fade = 1 - ease((t - 5.6) / 0.9)
+    out = []
+    for i in range(N):
+        c = scale(LAPS[(lap - 1) % 4], 0.25) if lap > 0 else OFF
+        c = mix(c, LAPS[lap % 4], clamp(m - i))
+        c = add(c, WHITE, clamp(1 - abs(m - 0.5 - i)) * glint)
+        c = add(c, GREEN, pulse * 0.8)
+        out.append(scale(c, fade))
+    return out
+
+
+# ── Return to sender: a card was cancelled ───────────────────────────────
+# A rose letter flies backwards round the ring and fades out at the bottom.
+def returned(t):
+    p = 6 - 18 * ease(t / 3.0)
+    head = ease(t / 0.3) * (1 - ease((t - 2.6) / 0.8))
+    out = []
+    for i in range(N):
+        b = behind(i, p)
+        c = scale(ROSE, clamp(1 - b / 4) ** 2 * 0.7 * head)
+        out.append(add(c, WHITE, clamp(1 - min(b, N - b)) ** 2 * 0.6 * head))
+    return out
+
+
+# ── Candles: spare, for any event ────────────────────────────────────────
+# Twelve birthday candles light one by one and flicker, then a puff from
+# the left blows them out, each leaving a wisp of smoke.
+def candles(t):
+    out = []
+    for i in range(N):
+        on = clamp((t - 0.2 - 0.2 * i) / 0.15)
+        tb = 4.6 + (math.cos(math.pi / 2 + i * 2 * math.pi / N) + 1) / 2 * 0.8
+        o = clamp((t - tb) / 0.12)
+        f = 0.5 + 0.5 * math.sin(2 * math.pi * (t * (2.5 + 2 * hash01(i + 3)) + hash01(i + 11)))
+        c = scale(mix(BUTTER, FLAME, f * 0.6), on * (1 - o) * (0.75 + 0.25 * f))
+        out.append(add(c, WHITE, math.sin(math.pi * clamp((t - tb) / 0.7)) * 0.1))
+    return out
+
+
 ANIMS = {
     "sealed": (sealed, 5.0),
     "heartbeat": (heartbeat, 4.0),
@@ -210,7 +267,13 @@ ANIMS = {
     "bloom": (bloom, 5.5),
     "ink": (ink, 3.5),
     "fireworks": (fireworks, 5.0),
+    "payment": (payment, 6.5),
+    "returned": (returned, 3.5),
+    "candles": (candles, 7.0),
 }
+
+# These take a second argument: the sale in dollars.
+TAKES_AMOUNT = ("payment",)
 
 
 # ── Always-on looks (not one-shot) ───────────────────────────────────────

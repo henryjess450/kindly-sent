@@ -46,7 +46,10 @@ Then it runs from any USB charger.
 | Fresh ink | someone signs a group card |
 | Airmail | a card is delivered |
 | Heartbeat | a recipient opens their card |
+| Payment | after every paid sale: a green pulse, then one LED per dollar (cents light the next LED partly; past $12 it goes round again in a new colour) |
+| Return to sender | a card is cancelled and refunded |
 | Fireworks | every 25th card, after the usual one |
+| Candles | spare, pick it for anything |
 
 They're in `anims.py` and copied line for line in `src/lib/lamp/animations.ts`
 (the admin page preview), so change both. Each one must start and end dark.

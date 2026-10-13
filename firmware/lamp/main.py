@@ -22,7 +22,7 @@ except ImportError:
 import anims
 import config
 
-VERSION = "1"
+VERSION = "2"
 SERVER = getattr(config, "SERVER", "https://kindlysent.ca").rstrip("/")
 OFFSET = getattr(config, "OFFSET", 0)  # which physical LED is the bottom
 REVERSE = getattr(config, "REVERSE", False)  # flip if animations go the wrong way round
@@ -35,7 +35,7 @@ state = {
     "idle": "off",  # off | glow
     "run": True,
 }
-queue = []  # animation names waiting to play
+queue = []  # (animation name, dollars or None) waiting to play
 
 
 def log(*args):
@@ -56,18 +56,22 @@ def clear():
     ring.write()
 
 
-def play(name):
+def play(name, amount=None):
     fn, dur = anims.ANIMS.get(name, (None, 0))
     if not fn:
         log("unknown animation", name)
         return
-    log("playing", name)
+    if name in anims.TAKES_AMOUNT:
+        amount = amount or 1.0
+        log("playing", name, "$%.2f" % amount)
+    else:
+        log("playing", name)
     start = time.ticks_ms()
     while state["run"]:
         t = time.ticks_diff(time.ticks_ms(), start) / 1000
         if t >= dur:
             break
-        show(fn(t))
+        show(fn(t, amount) if name in anims.TAKES_AMOUNT else fn(t))
         time.sleep_ms(20)
     clear()
 
@@ -94,7 +98,7 @@ def render():
             want = 0.0 if queue or state["idle"] != "glow" else 1.0
             idle = min(want, idle + dt * 1.5) if want > idle else max(want, idle - dt * 1.5)
             if queue and idle == 0.0:
-                play(queue[0])
+                play(*queue[0])
                 queue.pop(0)
                 dark = True
                 continue
@@ -169,11 +173,11 @@ def main():
             if state["mode"] != "ready":
                 state["mode"] = "ready"
                 if not greeted:
-                    queue.append("hello")
+                    queue.append(("hello", None))
                     greeted = True
                     log("Waiting for cards")
             for ev in data.get("events", []):
-                queue.append(ev["anim"])
+                queue.append((ev["anim"], ev.get("n")))
             after = data.get("last", after)
             # Don't ask again until the animations are done.
             while queue:

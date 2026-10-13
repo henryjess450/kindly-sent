@@ -7,6 +7,7 @@ import {
   addAdmin, addInvites, canManage, getGroup, getSignature, groupAdmins, isOwner, listInvites, parseGroup, publicGroup, sigMedia, signingOpen, updateGroup,
 } from "@/lib/groups";
 import { newToken } from "@/lib/ids";
+import { lampFor } from "@/lib/lamp/server";
 import { sendMail } from "@/lib/mail";
 import { noteLimits } from "@/lib/notes";
 import { getPayment, refund } from "@/lib/payments";
@@ -60,6 +61,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
       return NextResponse.json({ ok: true, refunded: 0, error: "Cancelled, but the refund needs a hand. We'll sort it out by email." });
     }
   }
+  lampFor("canceled", { cents: refunded || null });
   return NextResponse.json({ ok: true, refunded });
 }
 

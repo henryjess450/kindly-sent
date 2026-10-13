@@ -13,9 +13,10 @@ export default function LampPreview() {
         settings={{ ...LAMP_DEFAULTS, idle: "glow" }}
         status={{ online: true, agoMin: 0, rssi: -58, version: "1" }}
         plays={[
-          { id: 3, anim: "heartbeat", reason: "opened", at: at - 4 * 60_000 },
-          { id: 2, anim: "fireworks", reason: "card", at: at - 52 * 60_000 },
-          { id: 1, anim: "sealed", reason: "card", at: at - 52 * 60_000 },
+          { id: 4, anim: "heartbeat", reason: "opened", cents: null, at: at - 4 * 60_000 },
+          { id: 3, anim: "fireworks", reason: "group", cents: 150, at: at - 52 * 60_000 },
+          { id: 2, anim: "payment", reason: "group", cents: 150, at: at - 52 * 60_000 },
+          { id: 1, anim: "confetti", reason: "group", cents: 150, at: at - 52 * 60_000 },
         ]}
         keyMadeAt={at - 3600_000}
         site="https://kindlysent.ca"

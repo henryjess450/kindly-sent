@@ -200,6 +200,10 @@ const MIGRATIONS: string[] = [
     created_at INTEGER NOT NULL
   );
   `,
+  // 7: the lamp's Payment animation shows how much a sale was.
+  `
+  ALTER TABLE lamp_events ADD COLUMN cents INTEGER;
+  `,
 ];
 
 let db: DatabaseSync | undefined;

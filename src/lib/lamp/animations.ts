@@ -4,7 +4,7 @@
  * change one, change the other.
  *
  * Each frame function takes t (seconds since the animation started) and
- * returns 12 colours. LED 0 is the bottom of the ring; height(i) counts up
+ * returns 12 colours (Payment also takes the dollars). LED 0 is the bottom of the ring; height(i) counts up
  * both sides to the top (LED 6). Every animation starts and ends dark.
  */
 
@@ -20,6 +20,8 @@ const BUTTER: Rgb = [247, 196, 80];
 const SAGE: Rgb = [110, 190, 120];
 const SKY: Rgb = [70, 150, 255];
 const INK: Rgb = [0, 113, 227];
+const GREEN: Rgb = [48, 209, 88];
+const FLAME: Rgb = [255, 150, 40];
 const WHITE: Rgb = [255, 255, 255];
 
 const clamp = (x: number, lo = 0, hi = 1) => (x < lo ? lo : x > hi ? hi : x);
@@ -137,6 +139,47 @@ function fireworks(t: number) {
   });
 }
 
+const LAPS = [GREEN, BUTTER, SKY, ROSE];
+
+function payment(t: number, n = 5) {
+  n = clamp(n, 0.01, 48);
+  const pulse = Math.sin(Math.PI * clamp(t / 1.2)) ** 2;
+  const step = Math.min(0.16, 2.6 / Math.ceil(n));
+  const lit = clamp((t - 1.3) / step, 0, n);
+  const lap = Math.min(Math.floor(lit / 12), Math.floor((n - 0.0001) / 12));
+  const m = lit - 12 * lap;
+  const glint = lit < n ? 0.5 * clamp((t - 1.3) / 0.15) : 0; // a sparkle on the LED being counted
+  const fade = 1 - ease((t - 5.6) / 0.9);
+  return leds((i) => {
+    let c = lap > 0 ? scale(LAPS[(((lap - 1) % 4) + 4) % 4], 0.25) : OFF;
+    c = mix(c, LAPS[lap % 4], clamp(m - i));
+    c = add(c, WHITE, clamp(1 - Math.abs(m - 0.5 - i)) * glint);
+    c = add(c, GREEN, pulse * 0.8);
+    return scale(c, fade);
+  });
+}
+
+function returned(t: number) {
+  const p = 6 - 18 * ease(t / 3.0);
+  const head = ease(t / 0.3) * (1 - ease((t - 2.6) / 0.8));
+  return leds((i) => {
+    const b = behind(i, p);
+    const c = scale(ROSE, clamp(1 - b / 4) ** 2 * 0.7 * head);
+    return add(c, WHITE, clamp(1 - Math.min(b, N - b)) ** 2 * 0.6 * head);
+  });
+}
+
+function candles(t: number) {
+  return leds((i) => {
+    const on = clamp((t - 0.2 - 0.2 * i) / 0.15);
+    const tb = 4.6 + ((Math.cos(Math.PI / 2 + (i * 2 * Math.PI) / N) + 1) / 2) * 0.8;
+    const o = clamp((t - tb) / 0.12);
+    const f = 0.5 + 0.5 * Math.sin(2 * Math.PI * (t * (2.5 + 2 * hash01(i + 3)) + hash01(i + 11)));
+    const c = scale(mix(BUTTER, FLAME, f * 0.6), on * (1 - o) * (0.75 + 0.25 * f));
+    return add(c, WHITE, Math.sin(Math.PI * clamp((t - tb) / 0.7)) * 0.1);
+  });
+}
+
 /** The idle glow ("Glow"). Runs forever without looping back, so it never snaps. */
 export function glow(t: number) {
   return leds((i) =>
@@ -154,7 +197,13 @@ export const LAMP_ANIMS = {
   bloom: { name: "Bloom", blurb: "A sage stem grows, then rose petals open from the top and sway.", seconds: 5.5, frame: bloom },
   ink: { name: "Fresh ink", blurb: "A pen nib writes a blue line round the ring, then the ink dries.", seconds: 3.5, frame: ink },
   fireworks: { name: "Fireworks", blurb: "Three bursts in butter, red and sky, spreading both ways round.", seconds: 5, frame: fireworks },
-} as const;
+  payment: { name: "Payment", blurb: "A green pulse, then one light per dollar from the sale. Cents light the next one partly.", seconds: 6.5, frame: payment },
+  returned: { name: "Return to sender", blurb: "A rose letter flies backwards round the ring and fades out.", seconds: 3.5, frame: returned },
+  candles: { name: "Candles", blurb: "Twelve candles light one by one and flicker, then a puff blows them out.", seconds: 7, frame: candles },
+} as const satisfies Record<string, { name: string; blurb: string; seconds: number; frame: (t: number, n?: number) => Rgb[] }>;
+
+/** Animations that show the sale's amount (the lamp gets it in dollars). */
+export const TAKES_AMOUNT: readonly string[] = ["payment"];
 
 export type LampAnim = keyof typeof LAMP_ANIMS;
 export const LAMP_ANIM_IDS = Object.keys(LAMP_ANIMS) as LampAnim[];

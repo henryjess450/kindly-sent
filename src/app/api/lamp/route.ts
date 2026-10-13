@@ -31,14 +31,17 @@ export async function GET(req: Request) {
   const afterRaw = url.searchParams.get("after");
   const after = afterRaw && /^\d{1,12}$/.test(afterRaw) ? Math.min(Number(afterRaw), newest()) : null;
 
-  let events: { id: number; anim: string }[] = [];
+  let events: { id: number; anim: string; n?: number }[] = [];
   if (after !== null) {
     lampSeen(who, 1);
     try {
       const until = Date.now() + HOLD_MS;
-      const find = db.prepare("SELECT id, anim FROM lamp_events WHERE id > ? AND created_at >= ? ORDER BY id LIMIT 6");
+      const find = db.prepare("SELECT id, anim, cents FROM lamp_events WHERE id > ? AND created_at >= ? ORDER BY id LIMIT 6");
       while (!req.signal.aborted) {
-        events = (find.all(after, Date.now() - STALE_MS) as typeof events).map((e) => ({ ...e }));
+        // The lamp gets the sale in dollars (n), for the Payment animation.
+        events = (find.all(after, Date.now() - STALE_MS) as { id: number; anim: string; cents: number | null }[]).map(({ id, anim, cents }) =>
+          cents == null ? { id, anim } : { id, anim, n: cents / 100 },
+        );
         if (events.length || Date.now() >= until) break;
         // Woken straight away by queueLamp; the timeout is just a safety net.
         await waitForLamp(Math.min(5_000, until - Date.now()), req.signal);

@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { LAMP_ANIMS, LAMP_ANIM_IDS, type LampAnim } from "@/lib/lamp/animations";
+import { LAMP_ANIMS, LAMP_ANIM_IDS, TAKES_AMOUNT, type LampAnim } from "@/lib/lamp/animations";
 import type { LampChoice, LampEvent, LampPlay, LampSettings, LampStatus } from "@/lib/lamp/server";
 import { LampRing } from "./LampRing";
+import { money } from "@/config/pricing";
 
 // Kept here as well as in server.ts: this file runs in the browser.
 const EVENTS: { key: LampEvent; label: string }[] = [
@@ -13,9 +14,11 @@ const EVENTS: { key: LampEvent; label: string }[] = [
   { key: "group", label: "A group card is bought" },
   { key: "free", label: "A free link is used" },
   { key: "renew", label: "A yearly card is renewed" },
+  { key: "paid", label: "A payment comes in (plays after the one above)" },
   { key: "signed", label: "Someone signs a group card" },
   { key: "delivered", label: "A card is delivered" },
   { key: "opened", label: "A card is opened" },
+  { key: "canceled", label: "A card is cancelled and refunded" },
 ];
 const REASONS: Record<string, string> = { ...Object.fromEntries(EVENTS.map((e) => [e.key, e.label])), admin: "Played from here" };
 const animName = (id: string) => LAMP_ANIMS[id as LampAnim]?.name ?? id;
@@ -69,7 +72,7 @@ export function LampPanel(props: { settings: LampSettings; status: LampStatus; p
             <ul className="lamp-plays">
               {plays.map((p) => (
                 <li key={p.id}>
-                  <span><strong>{animName(p.anim)}</strong> <span className="muted">· {REASONS[p.reason] ?? p.reason}</span></span>
+                  <span><strong>{animName(p.anim)}</strong> <span className="muted">· {REASONS[p.reason] ?? p.reason}{p.cents != null ? ` · ${money(p.cents)}` : ""}</span></span>
                   <time className="muted">{new Date(p.at).toLocaleString("en-CA", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</time>
                 </li>
               ))}
@@ -94,6 +97,9 @@ export function LampPanel(props: { settings: LampSettings; status: LampStatus; p
         .lamp-tile { display: flex; gap: 14px; align-items: center; padding: 14px; border-radius: 18px; background: var(--bg-alt); }
         .lamp-tile p { margin: 2px 0 8px; font-size: 13px; line-height: 1.35; color: var(--ink-3); }
         .lamp-tile strong { font-size: 16px; }
+        .lamp-play { display: flex; align-items: center; gap: 8px; }
+        .lamp-dollars { display: inline-flex; align-items: center; gap: 2px; height: 36px; padding: 0 4px 0 12px; border-radius: 980px; background: #fff; border: 1px solid var(--line); font-size: 15px; font-weight: 600; color: var(--ink-3); }
+        .lamp-dollars input { width: 52px; border: 0; background: transparent; font: inherit; color: var(--ink); outline: none; }
         .lamp-msg { margin: 14px 0 0; font-size: 14px; font-weight: 500; color: var(--ok); }
         .lamp-events { display: grid; gap: 0; }
         .lamp-event { display: grid; grid-template-columns: 1fr 210px 40px; gap: 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line-soft); font-size: 15px; }
@@ -159,6 +165,7 @@ function StatusLine({ status, paired }: { status: LampStatus; paired: boolean })
 function PlayPanel({ preview, onPlayed }: { preview?: boolean; onPlayed: (p: LampPlay[]) => void }) {
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
+  const [dollars, setDollars] = useState(5);
   async function play(anim: LampAnim) {
     setBusy(anim);
     setMsg("");
@@ -166,7 +173,7 @@ function PlayPanel({ preview, onPlayed }: { preview?: boolean; onPlayed: (p: Lam
       if (preview) {
         setMsg(`Preview only: ${LAMP_ANIMS[anim].name} would play now.`);
       } else {
-        const json = await post({ action: "play", anim });
+        const json = await post({ action: "play", anim, dollars: TAKES_AMOUNT.includes(anim) ? dollars : undefined });
         onPlayed(json.plays);
         setMsg(json.message);
       }
@@ -183,13 +190,20 @@ function PlayPanel({ preview, onPlayed }: { preview?: boolean; onPlayed: (p: Lam
       <div className="lamp-tiles">
         {LAMP_ANIM_IDS.map((id, i) => (
           <motion.div key={id} className="lamp-tile" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-            <LampRing anim={id} size={78} />
+            <LampRing anim={id} size={78} amount={dollars} />
             <div>
               <strong>{LAMP_ANIMS[id].name}</strong>
               <p>{LAMP_ANIMS[id].blurb}</p>
-              <motion.button className="btn btn-ghost btn-small" whileTap={{ scale: 0.94 }} disabled={!!busy} onClick={() => play(id)}>
-                {busy === id ? "Sending..." : "Play"}
-              </motion.button>
+              <span className="lamp-play">
+                <motion.button className="btn btn-ghost btn-small" whileTap={{ scale: 0.94 }} disabled={!!busy} onClick={() => play(id)}>
+                  {busy === id ? "Sending..." : "Play"}
+                </motion.button>
+                {TAKES_AMOUNT.includes(id) && (
+                  <label className="lamp-dollars" aria-label="Sale amount in dollars">
+                    $<input type="number" min={0.01} max={48} step={0.5} value={dollars} onChange={(e) => setDollars(Math.min(48, Math.max(0.01, Number(e.target.value) || 1)))} />
+                  </label>
+                )}
+              </span>
             </div>
           </motion.div>
         ))}
