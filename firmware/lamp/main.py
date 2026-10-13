@@ -22,10 +22,8 @@ except ImportError:
 import anims
 import config
 
-VERSION = "2"
+VERSION = "3"
 SERVER = getattr(config, "SERVER", "https://kindlysent.ca").rstrip("/")
-OFFSET = getattr(config, "OFFSET", 0)  # which physical LED is the bottom
-REVERSE = getattr(config, "REVERSE", False)  # flip if animations go the wrong way round
 
 ring = neopixel.NeoPixel(machine.Pin(config.LED_PIN, machine.Pin.OUT), anims.N)
 
@@ -33,6 +31,11 @@ state = {
     "mode": "connecting",  # connecting | trouble | ready
     "bright": getattr(config, "BRIGHTNESS", 40) / 100,
     "idle": "off",  # off | glow
+    # Which LED is the bottom, and which way is round. The admin page's
+    # "Find the bottom" sets these; config.py only matters until then.
+    "offset": getattr(config, "OFFSET", 0),
+    "reverse": getattr(config, "REVERSE", False),
+    "find": False,  # showing every LED a different colour for "Find the bottom"
     "run": True,
 }
 queue = []  # (animation name, dollars or None) waiting to play
@@ -46,13 +49,22 @@ def show(colors, level=1.0):
     b = state["bright"] * level
     for i in range(anims.N):
         c = colors[i]
-        j = (OFFSET + (-i if REVERSE else i)) % anims.N
+        j = (state["offset"] + (-i if state["reverse"] else i)) % anims.N
         ring[j] = (min(255, int(c[0] * b)), min(255, int(c[1] * b)), min(255, int(c[2] * b)))
     ring.write()
 
 
 def clear():
     ring.fill((0, 0, 0))
+    ring.write()
+
+
+def show_raw(colors):
+    """Lights LEDs in wiring order, ignoring offset and direction (for Find the bottom)."""
+    b = max(state["bright"], 0.25)
+    for j in range(anims.N):
+        c = colors[j]
+        ring[j] = (int(c[0] * b), int(c[1] * b), int(c[2] * b))
     ring.write()
 
 
@@ -93,6 +105,10 @@ def render():
             dark = False
         elif mode == "trouble":
             show(anims.trouble(t))
+            dark = False
+        elif state["find"] and not queue:
+            show_raw(anims.find_bottom(t))
+            idle = 0.0
             dark = False
         else:
             want = 0.0 if queue or state["idle"] != "glow" else 1.0
@@ -170,6 +186,9 @@ def main():
             failing_since = None
             state["bright"] = data.get("brightness", 40) / 100
             state["idle"] = data.get("idle", "off")
+            state["offset"] = data.get("offset", state["offset"]) % anims.N
+            state["reverse"] = bool(data.get("reverse", state["reverse"]))
+            state["find"] = bool(data.get("find"))
             if state["mode"] != "ready":
                 state["mode"] = "ready"
                 if not greeted:

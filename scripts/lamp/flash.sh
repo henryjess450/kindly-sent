@@ -167,8 +167,8 @@ print("LED_PIN = %d" % int(e["PIN"]))
 print("LAMP_KEY = %r" % e["KEY"])
 print("SERVER = %r" % e["SITE"])
 print("BRIGHTNESS = 40  # until the site sends the admin page's setting")
-print("OFFSET = 0  # which LED is the bottom of the ring")
-print("REVERSE = False  # True if animations go round the wrong way")
+print("OFFSET = 0  # which LED is the bottom (the admin page's Find the bottom overrides this)")
+print("REVERSE = False  # True if animations go round the wrong way (likewise)")
 PYEOF
 
 say "Copying the lamp code and settings"

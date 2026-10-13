@@ -298,6 +298,18 @@ def trouble(t):
     return [scale(AMBER, b * 0.5) if i == 0 else OFF for i in range(N)]
 
 
+# ── Find the bottom (set up from the admin page) ─────────────────────────
+# Every LED a different look, in the lamp's own wiring order (no turning):
+# six colours steady on LEDs 0-5, the same six flashing on LEDs 6-11. The
+# admin page shows the same twelve, and you tap the one at the bottom.
+FIND = ((255, 0, 0), (255, 180, 0), (0, 255, 0), (0, 200, 255), (0, 0, 255), (255, 0, 200))
+
+
+def find_bottom(t):
+    on = (t * 2) % 1 < 0.5
+    return [FIND[j % 6] if j < 6 or on else OFF for j in range(N)]
+
+
 def hello(t):
     """One red lap when the lamp first reaches the site."""
     p = t / 1.2 * 12

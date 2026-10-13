@@ -33,6 +33,8 @@ export type LampSettings = {
   milestone: { every: number; anim: LampAnim };
   /** No animations from the site between these hours, Victoria time. Play on the admin page still works. */
   quiet: { on: boolean; from: number; to: number };
+  /** Which LED (in the lamp's wiring order) is the bottom, and whether "round" runs the other way. Set by Find the bottom. */
+  ring: { bottom: number; reverse: boolean };
 };
 
 export const LAMP_DEFAULTS: LampSettings = {
@@ -51,6 +53,7 @@ export const LAMP_DEFAULTS: LampSettings = {
   },
   milestone: { every: 25, anim: "fireworks" },
   quiet: { on: false, from: 22, to: 8 },
+  ring: { bottom: 0, reverse: false },
 };
 
 const TIME_ZONE = "America/Vancouver";
@@ -68,6 +71,7 @@ export function parseLampSettings(input: unknown): LampSettings {
   const play = (o.play ?? {}) as Record<string, unknown>;
   const ms = (o.milestone ?? {}) as Record<string, unknown>;
   const q = (o.quiet ?? {}) as Record<string, unknown>;
+  const r = (o.ring ?? {}) as Record<string, unknown>;
   return {
     brightness: int(o.brightness, 5, 100, d.brightness),
     idle: o.idle === "glow" ? "glow" : "off",
@@ -76,6 +80,7 @@ export function parseLampSettings(input: unknown): LampSettings {
     ) as LampSettings["play"],
     milestone: { every: int(ms.every, 0, 10_000, d.milestone.every), anim: isAnim(ms.anim) ? ms.anim : d.milestone.anim },
     quiet: { on: q.on === true, from: int(q.from, 0, 23, d.quiet.from), to: int(q.to, 0, 23, d.quiet.to) },
+    ring: { bottom: int(r.bottom, 0, 11, d.ring.bottom), reverse: r.reverse === true },
   };
 }
 
@@ -134,8 +139,29 @@ export function lampKeyOk(header: string | null) {
 
 export type LampPresence = { seenAt: number; waiting: number; rssi: number | null; version: string | null };
 
-const g = globalThis as unknown as { __lamp?: { presence: LampPresence | null; bus: EventTarget } };
+const g = globalThis as unknown as { __lamp?: { presence: LampPresence | null; bus: EventTarget; findUntil?: number } };
 const lamp = (g.__lamp ??= { presence: null, bus: new EventTarget() });
+
+// ── Find the bottom: the lamp lights every LED a different colour ───────
+
+const FIND_MS = 3 * 60_000;
+
+/** True while the lamp should show its colour chart (it stops by itself after 3 minutes). */
+export const findingBottom = () => (lamp.findUntil ?? 0) > Date.now();
+
+export function findBottom(on: boolean) {
+  lamp.findUntil = on ? Date.now() + FIND_MS : 0;
+  wakeLamp("settings");
+}
+
+/** Saves which LED is the bottom and which way is round, ends Find the bottom, and plays Fresh ink to show it. */
+export function setRing(bottom: number, reverse: boolean) {
+  const s = parseLampSettings({ ...getLampSettings(), ring: { bottom, reverse } });
+  writeSetting(SETTINGS_KEY, JSON.stringify(s));
+  lamp.findUntil = 0;
+  queueLamp(["ink"], "ring");
+  return s;
+}
 
 export function lampSeen(p: Pick<LampPresence, "rssi" | "version">, waitingDelta = 0) {
   lamp.presence = { ...p, seenAt: Date.now(), waiting: Math.max(0, (lamp.presence?.waiting ?? 0) + waitingDelta) };

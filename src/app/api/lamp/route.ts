@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { getLampSettings, idleNow, lampKeyOk, lampSeen, waitForLamp } from "@/lib/lamp/server";
+import { findingBottom, getLampSettings, idleNow, lampKeyOk, lampSeen, waitForLamp } from "@/lib/lamp/server";
 import { clientIp, limited } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,8 @@ const STALE_MS = 10 * 60_000;
  * ?after=<id> is the last event the lamp has seen; without it (just switched
  * on) we only say where the queue is, so it doesn't replay old cards. Every
  * answer carries the admin page's brightness and idle look (dark during
- * quiet hours).
+ * quiet hours), which LED is the bottom and which way is round, and whether
+ * to show the Find the bottom colours.
  */
 export async function GET(req: Request) {
   if (limited(`lamp:${clientIp(req)}`, 30, 60_000)) return NextResponse.json({ error: "Too many requests." }, { status: 429 });
@@ -57,5 +58,5 @@ export async function GET(req: Request) {
 
   const s = getLampSettings();
   const last = events.at(-1)?.id ?? Math.max(after ?? 0, newest());
-  return NextResponse.json({ events, last, brightness: s.brightness, idle: idleNow(s) }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ events, last, brightness: s.brightness, idle: idleNow(s), offset: s.ring.bottom, reverse: s.ring.reverse, find: findingBottom() }, { headers: { "Cache-Control": "no-store" } });
 }

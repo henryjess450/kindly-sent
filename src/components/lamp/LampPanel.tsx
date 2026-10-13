@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { LAMP_ANIMS, LAMP_ANIM_IDS, TAKES_AMOUNT, type LampAnim } from "@/lib/lamp/animations";
+import { findLed, LAMP_ANIMS, LAMP_ANIM_IDS, TAKES_AMOUNT, type LampAnim } from "@/lib/lamp/animations";
 import type { LampChoice, LampEvent, LampPlay, LampSettings, LampStatus } from "@/lib/lamp/server";
 import { LampRing } from "./LampRing";
 import { money } from "@/config/pricing";
@@ -20,7 +20,7 @@ const EVENTS: { key: LampEvent; label: string }[] = [
   { key: "opened", label: "A card is opened" },
   { key: "canceled", label: "A card is cancelled and refunded" },
 ];
-const REASONS: Record<string, string> = { ...Object.fromEntries(EVENTS.map((e) => [e.key, e.label])), admin: "Played from here" };
+const REASONS: Record<string, string> = { ...Object.fromEntries(EVENTS.map((e) => [e.key, e.label])), admin: "Played from here", ring: "Checking the bottom" };
 const animName = (id: string) => LAMP_ANIMS[id as LampAnim]?.name ?? id;
 const HOURS = Array.from({ length: 24 }, (_, h) => ({ h, label: new Date(2026, 0, 1, h).toLocaleTimeString("en-CA", { hour: "numeric" }) }));
 
@@ -62,6 +62,7 @@ export function LampPanel(props: { settings: LampSettings; status: LampStatus; p
 
       <PlayPanel preview={props.preview} onPlayed={setPlays} />
       <SettingsPanel initial={props.settings} preview={props.preview} onSaved={setStatus} />
+      <RingPanel initial={props.settings.ring} online={status.online} preview={props.preview} onPlayed={setPlays} />
       <div className="lamp-two">
         <PairPanel keyMadeAt={props.keyMadeAt} site={props.site} preview={props.preview} />
         <section className="panel lamp-sec">
@@ -88,6 +89,16 @@ export function LampPanel(props: { settings: LampSettings; status: LampStatus; p
         .lamp-lede { font-size: 19px; line-height: 1.45; max-width: 520px; margin: 12px 0 14px; }
         .lamp-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 15px; color: var(--ink-3); }
         .lamp-status strong { color: var(--ink); font-weight: 600; }
+        .lamp-sws { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; margin: 0 0 18px; }
+        .lamp-sw { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line-soft); background: #1c1c1e; color: #f5f5f7; font: inherit; font-size: 13px; font-weight: 500; text-align: left; cursor: pointer; }
+        .lamp-sw:disabled { cursor: default; }
+        .lamp-sw i { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; }
+        .lamp-sw i.flash { animation: lamp-flash 0.5s steps(1, end) infinite; }
+        .lamp-sw.big { padding: 16px 18px; font-size: 15px; }
+        .lamp-sw.big i { width: 26px; height: 26px; }
+        @keyframes lamp-flash { 50% { opacity: 0.15; box-shadow: none; } }
+        .lamp-ask { font-size: 17px; margin: 0 0 16px; }
+        .lamp-ring-now { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 16px; font-size: 15px; }
         .lamp-quiet { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 980px; background: #eef0ff; color: #3e4ccf; font-size: 12px; font-weight: 600; }
         .lamp-dot { position: relative; display: inline-flex; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; }
         .lamp-dot i { position: absolute; inset: 0; border-radius: 50%; }
@@ -319,6 +330,106 @@ function SettingsPanel({ initial, preview, onSaved }: { initial: LampSettings; p
         {msg && <span className="lamp-msg" style={{ margin: 0 }}>{msg}</span>}
         {error && <span className="error">{error}</span>}
       </div>
+    </section>
+  );
+}
+
+function Swatch({ j, onPick, big }: { j: number; onPick?: () => void; big?: boolean }) {
+  const led = findLed(j);
+  const [r, g, b] = led.rgb;
+  return (
+    <motion.button type="button" className={`lamp-sw${big ? " big" : ""}`} onClick={onPick} whileTap={{ scale: 0.92 }} whileHover={{ y: -2 }} disabled={!onPick}>
+      <i className={led.flashing ? "flash" : ""} style={{ background: `rgb(${r} ${g} ${b})`, boxShadow: `0 0 14px rgb(${r} ${g} ${b} / .6)` }} />
+      <span>{led.name}{led.flashing ? ", flashing" : ""}</span>
+    </motion.button>
+  );
+}
+
+/**
+ * Find the bottom: the lamp lights each LED a different colour in its wiring
+ * order. Tap the one at the bottom, then the one just left of it (going
+ * clockwise), and every animation starts at the bottom and goes the right way.
+ */
+function RingPanel({ initial, online, preview, onPlayed }: { initial: LampSettings["ring"]; online: boolean; preview?: boolean; onPlayed: (p: LampPlay[]) => void }) {
+  const [ring, setRing] = useState(initial);
+  const [step, setStep] = useState<"idle" | "bottom" | "left" | "done">("idle");
+  const [bottom, setBottom] = useState(0);
+  const [error, setError] = useState("");
+
+  // Leaving the page mid-way stops the colours (they also stop by themselves after 3 minutes).
+  useEffect(() => {
+    if (step !== "bottom" && step !== "left") return;
+    const stop = () => navigator.sendBeacon?.("/api/admin/lamp", new Blob([JSON.stringify({ action: "find", on: false })], { type: "application/json" }));
+    window.addEventListener("pagehide", stop);
+    return () => window.removeEventListener("pagehide", stop);
+  }, [step]);
+
+  async function start() {
+    setError("");
+    try {
+      if (!preview) await post({ action: "find", on: true });
+      setStep("bottom");
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+  async function cancel() {
+    setStep("idle");
+    if (!preview) await post({ action: "find", on: false }).catch(() => {});
+  }
+  async function pickLeft(j: number) {
+    // Animations count up clockwise from the bottom, so "left of the bottom" is the next LED round.
+    const reverse = j === (bottom + 11) % 12;
+    setError("");
+    try {
+      if (!preview) {
+        const json = await post({ action: "ring", bottom, reverse });
+        onPlayed(json.plays);
+      }
+      setRing({ bottom, reverse });
+      setStep("done");
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  return (
+    <section className="panel lamp-sec">
+      <h2>Find the bottom</h2>
+      <AnimatePresence mode="wait">
+        {step === "idle" || step === "done" ? (
+          <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <p className="muted">
+              {step === "done"
+                ? "Saved. Fresh ink is playing on the lamp: it should start at the bottom and run up the left side. If it doesn't, run this again."
+                : "If animations don't start at the bottom of the ring, or go round the wrong way, tap below. Every light on the ring turns a different colour, and you tap the one at the bottom."}
+            </p>
+            <div className="lamp-ring-now">
+              <Swatch j={ring.bottom} />
+              <span className="muted">is the bottom light, and animations go round {ring.reverse ? "the other way" : "the usual way"}.</span>
+            </div>
+            <button className="btn btn-brand btn-small" onClick={start} disabled={!online && !preview}>{step === "done" ? "Do it again" : "Find the bottom"}</button>
+            {!online && !preview && <span className="muted" style={{ marginLeft: 12, fontSize: 14 }}>The lamp needs to be online.</span>}
+          </motion.div>
+        ) : step === "bottom" ? (
+          <motion.div key="bottom" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <p className="lamp-ask"><b>1 of 2.</b> Look at the lamp. Which light is at the very bottom of the ring?</p>
+            <div className="lamp-sws">
+              {Array.from({ length: 12 }, (_, j) => <Swatch key={j} j={j} onPick={() => { setBottom(j); setStep("left"); }} />)}
+            </div>
+            <button className="btn btn-ghost btn-small" onClick={cancel}>Cancel</button>
+          </motion.div>
+        ) : (
+          <motion.div key="left" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <p className="lamp-ask"><b>2 of 2.</b> And which one is just to the <b>left</b> of it?</p>
+            <div className="lamp-sws">
+              {[(bottom + 1) % 12, (bottom + 11) % 12].map((j) => <Swatch key={j} j={j} big onPick={() => pickLeft(j)} />)}
+            </div>
+            <button className="btn btn-ghost btn-small" onClick={() => setStep("bottom")}>Back</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {error && <p className="error">{error}</p>}
     </section>
   );
 }

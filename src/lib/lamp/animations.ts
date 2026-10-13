@@ -202,6 +202,20 @@ export const LAMP_ANIMS = {
   candles: { name: "Candles", blurb: "Twelve candles light one by one and flicker, then a puff blows them out.", seconds: 7, frame: candles },
 } as const satisfies Record<string, { name: string; blurb: string; seconds: number; frame: (t: number, n?: number) => Rgb[] }>;
 
+/**
+ * Find the bottom: what each LED shows, in the lamp's wiring order (see
+ * find_bottom in anims.py). LEDs 0-5 are steady, 6-11 flash the same colours.
+ */
+export const FIND_COLORS = [
+  { rgb: [255, 0, 0], name: "Red" },
+  { rgb: [255, 180, 0], name: "Yellow" },
+  { rgb: [0, 255, 0], name: "Green" },
+  { rgb: [0, 200, 255], name: "Cyan" },
+  { rgb: [0, 0, 255], name: "Blue" },
+  { rgb: [255, 0, 200], name: "Pink" },
+] as const;
+export const findLed = (j: number) => ({ ...FIND_COLORS[j % 6], flashing: j >= 6 });
+
 /** Animations that show the sale's amount (the lamp gets it in dollars). */
 export const TAKES_AMOUNT: readonly string[] = ["payment"];
 
