@@ -187,6 +187,19 @@ const MIGRATIONS: string[] = [
   ALTER TABLE cards ADD COLUMN free_code TEXT;
   ALTER TABLE group_cards ADD COLUMN free_code TEXT;
   `,
+  // 6: the card lamp (an LED ring on the desk) and a place for site settings.
+  `
+  CREATE TABLE settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+  CREATE TABLE lamp_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    anim TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  `,
 ];
 
 let db: DatabaseSync | undefined;

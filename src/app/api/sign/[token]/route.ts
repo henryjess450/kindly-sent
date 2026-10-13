@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getGroupByInvite, insertSignature, parseSignature, publicSignature, signingOpen } from "@/lib/groups";
+import { lampFor } from "@/lib/lamp/server";
 import { noteLimits } from "@/lib/notes";
 import { clientIp, limited } from "@/lib/ratelimit";
 import { readSignForm, storePhotos, UploadError } from "@/lib/signform";
@@ -28,5 +29,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
   }
   const inviteId = typeof form.data.inviteId === "string" && db.prepare("SELECT 1 FROM group_invites WHERE id = ? AND group_id = ?").get(form.data.inviteId, g.id) ? form.data.inviteId : null;
   const { sig, editToken } = insertSignature(g.id, parsed.sig, photos, inviteId);
+  lampFor("signed");
   return NextResponse.json({ signature: publicSignature(sig), editToken });
 }

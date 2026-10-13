@@ -1,6 +1,7 @@
 import { cpSync, existsSync, readdirSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import { getDb, type CardRow, type GroupRow, type UserRow } from "./db";
+import { lampFor } from "./lamp/server";
 import {
   cardArrivedEmail, deliveredEmail, failedEmail, groupAdminReminderEmail, groupArrivedEmail, groupDeliveredEmail, groupFailedEmail,
   groupReminderEmail, renewEmail,
@@ -84,6 +85,7 @@ async function deliver(card: CardRow) {
   try {
     await sendMail({ to: card.recipient_email, ...cardArrivedEmail(card) });
     db.prepare("UPDATE cards SET status = 'sent', sent_at = ?, last_error = NULL WHERE id = ?").run(Date.now(), card.id);
+    lampFor("delivered");
     if (card.repeat === "yearly") scheduleNextYear(card, senderEmail);
     if (senderEmail) await sendMail({ to: senderEmail, ...deliveredEmail(card) }).catch(() => {});
   } catch (err) {
@@ -150,6 +152,7 @@ async function deliverGroups() {
     try {
       await sendMail({ to: g.recipient_email, ...groupArrivedEmail(g, count) });
       db.prepare("UPDATE group_cards SET status = 'sent', sent_at = ?, last_error = NULL WHERE id = ?").run(Date.now(), g.id);
+      lampFor("delivered");
       for (const to of admins) await sendMail({ to, ...groupDeliveredEmail(g, count) }).catch(() => {});
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

@@ -101,8 +101,13 @@ export function AdminDashboard({ stats, upcoming, sent, codes: initialCodes, sit
 
   return (
     <div className="admin">
-      <p className="eyebrow">Admin</p>
-      <h1 className="display display-l">Every card.</h1>
+      <div className="ad-head">
+        <div>
+          <p className="eyebrow">Admin</p>
+          <h1 className="display display-l">Every card.</h1>
+        </div>
+        <Link href="/admin/lamp" className="btn btn-ghost btn-small">Card lamp</Link>
+      </div>
 
       <div className="ad-tiles">
         {tiles.map((t, i) => (
@@ -180,7 +185,8 @@ export function AdminDashboard({ stats, upcoming, sent, codes: initialCodes, sit
 
       <style>{`
         .admin { display: grid; gap: 24px; }
-        .admin > .display { margin-top: -12px; }
+        .ad-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+        .ad-head .display { margin: 0; }
         .ad-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
         .ad-tile { background: var(--surface); border-radius: 18px; padding: 16px 18px; display: grid; gap: 2px; box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04); }
         .ad-tile strong { font-family: var(--font-display); font-size: 28px; letter-spacing: -0.03em; }

@@ -5,6 +5,7 @@ import { cardsCreatedToday, getCard, insertCard, parseCard, publicCard } from "@
 import { getDb } from "@/lib/db";
 import { freeCardEmail, receiptEmail } from "@/lib/emails";
 import { claimCode, usableCode } from "@/lib/freecodes";
+import { lampFor } from "@/lib/lamp/server";
 import { sendMail } from "@/lib/mail";
 import { charge, PaymentError } from "@/lib/payments";
 import { createLoginLink, getUser, normalizeEmail } from "@/lib/session";
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
     if (!code || !claimCode(code.code, "card")) return NextResponse.json({ error: "This free link has been used up." }, { status: 410 });
     const card = insertCard(parsed.card, parsed.sendAt, { userId: user?.id ?? null, email }, { status: "scheduled", priceCents: 0 });
     getDb().prepare("UPDATE cards SET free_code = ? WHERE id = ?").run(code.code, card.id);
+    lampFor("free");
     const manage = user ? `${site.url}/cards` : (createLoginLink(email, { next: "/cards" }) ?? `${site.url}/signin`);
     await sendMail({ to: email, ...freeCardEmail(card, manage) }).catch((e) => console.error("[free]", e));
     if (parsed.card.sendNow) void tick();
@@ -56,6 +58,7 @@ export async function POST(req: Request) {
   }
 
   getDb().prepare("UPDATE cards SET status = 'scheduled', payment_id = ? WHERE id = ?").run(payment.id, card.id);
+  lampFor("card");
   const saved = getCard(card.id)!;
   // Signed in: link straight to the list. Not signed in: the link signs them in too.
   const manage = user ? `${site.url}/cards` : (createLoginLink(email, { next: "/cards" }) ?? `${site.url}/signin`);

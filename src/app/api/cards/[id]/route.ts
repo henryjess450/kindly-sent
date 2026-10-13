@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { quote } from "@/config/pricing";
 import { getCard, ownedCard, parseCard, publicCard, updateCard } from "@/lib/cards";
 import { getDb } from "@/lib/db";
+import { lampFor } from "@/lib/lamp/server";
 import { charge, getPayment, PaymentError, refund } from "@/lib/payments";
 import { getUser } from "@/lib/session";
 import { tick } from "@/lib/scheduler";
@@ -38,6 +39,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
         amounts: { cardCents: q.card, taxCents: q.cardTax, totalCents: q.total },
       });
       getDb().prepare("UPDATE cards SET status = 'scheduled', payment_id = ?, price_cents = ? WHERE id = ?").run(p.id, q.total, card.id);
+      lampFor("renew");
     } catch (err) {
       return NextResponse.json({ error: err instanceof PaymentError ? err.message : "The payment didn't go through." }, { status: 402 });
     }

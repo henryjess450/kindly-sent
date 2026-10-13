@@ -6,6 +6,7 @@ import { getDb } from "@/lib/db";
 import { groupReceiptEmail } from "@/lib/emails";
 import { addAdmin, cartGroups, getGroup, publicGroup } from "@/lib/groups";
 import { hashToken } from "@/lib/ids";
+import { lampFor } from "@/lib/lamp/server";
 import { sendMail } from "@/lib/mail";
 import { charge, PaymentError } from "@/lib/payments";
 import { createLoginLink, getUser, normalizeEmail } from "@/lib/session";
@@ -49,6 +50,7 @@ export async function POST(req: Request) {
     db.prepare("UPDATE group_cards SET status = 'collecting', payment_id = ?, price_cents = ?, owner_email = ?, cart_id = NULL WHERE id = ? AND status = 'draft'").run(payment.id, each, email, g.id);
     addAdmin(g.id, email, "owner");
   }
+  lampFor("group", groups.length);
   const paid = groups.map((g) => getGroup(g.id)!);
   const next = paid.length === 1 ? `/groups/${paid[0].id}` : "/cards";
   const manage = user ? `${site.url}${next}` : (createLoginLink(email, { next }) ?? `${site.url}/signin`);

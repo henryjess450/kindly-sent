@@ -5,6 +5,7 @@ import { site } from "@/config/site";
 import { getDb } from "@/lib/db";
 import { groupFreeEmail } from "@/lib/emails";
 import { claimCode, usableCode } from "@/lib/freecodes";
+import { lampFor } from "@/lib/lamp/server";
 import { sendMail } from "@/lib/mail";
 import { createLoginLink, getUser, normalizeEmail } from "@/lib/session";
 
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
     const draft = insertGroup(parsed.group, { cartId: "", ownerEmail: email });
     getDb().prepare("UPDATE group_cards SET status = 'collecting', cart_id = NULL, free_code = ? WHERE id = ?").run(code.code, draft.id);
     addAdmin(draft.id, email, "owner");
+    lampFor("free");
     const g = getGroup(draft.id)!;
     const inviteUrl = `${site.url}/g/${g.invite_token}`;
     const manage = user ? `${site.url}/groups/${g.id}` : (createLoginLink(email, { next: `/groups/${g.id}` }) ?? `${site.url}/signin`);
