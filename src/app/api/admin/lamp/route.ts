@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   }
   if (body.action === "settings") {
     const settings = saveLampSettings({ ...getLampSettings(), ...(body.settings as object) });
-    return NextResponse.json({ settings, message: "Saved. The lamp picks it up within 25 seconds." });
+    return NextResponse.json({ settings, status: lampPresence(), message: "Saved. The lamp has it now." });
   }
   if (body.action === "key") return NextResponse.json({ key: newLampKey(), madeAt: Date.now() });
   return NextResponse.json({ error: "Unknown action." }, { status: 400 });

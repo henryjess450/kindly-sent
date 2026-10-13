@@ -11,7 +11,7 @@ export default function LampPreview() {
       <LampPanel
         preview
         settings={{ ...LAMP_DEFAULTS, idle: "glow" }}
-        status={{ online: true, agoMin: 0, rssi: -58, version: "1" }}
+        status={{ online: true, agoMin: 0, rssi: -58, version: "2", quietNow: false }}
         plays={[
           { id: 4, anim: "heartbeat", reason: "opened", cents: null, at: at - 4 * 60_000 },
           { id: 3, anim: "fireworks", reason: "group", cents: 150, at: at - 52 * 60_000 },

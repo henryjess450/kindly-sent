@@ -61,7 +61,7 @@ export function LampPanel(props: { settings: LampSettings; status: LampStatus; p
       </header>
 
       <PlayPanel preview={props.preview} onPlayed={setPlays} />
-      <SettingsPanel initial={props.settings} preview={props.preview} />
+      <SettingsPanel initial={props.settings} preview={props.preview} onSaved={setStatus} />
       <div className="lamp-two">
         <PairPanel keyMadeAt={props.keyMadeAt} site={props.site} preview={props.preview} />
         <section className="panel lamp-sec">
@@ -88,6 +88,7 @@ export function LampPanel(props: { settings: LampSettings; status: LampStatus; p
         .lamp-lede { font-size: 19px; line-height: 1.45; max-width: 520px; margin: 12px 0 14px; }
         .lamp-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 15px; color: var(--ink-3); }
         .lamp-status strong { color: var(--ink); font-weight: 600; }
+        .lamp-quiet { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 980px; background: #eef0ff; color: #3e4ccf; font-size: 12px; font-weight: 600; }
         .lamp-dot { position: relative; display: inline-flex; width: 10px; height: 10px; margin-right: 8px; vertical-align: -1px; }
         .lamp-dot i { position: absolute; inset: 0; border-radius: 50%; }
         .lamp-sec { padding: 24px 26px; }
@@ -138,6 +139,7 @@ export function LampPanel(props: { settings: LampSettings; status: LampStatus; p
 }
 
 function StatusLine({ status, paired }: { status: LampStatus; paired: boolean }) {
+  const quiet = status.quietNow && <span className="lamp-quiet">Quiet hours: the site won&apos;t light it</span>;
   const ago = status.agoMin;
   const signal = status.rssi == null ? null : status.rssi > -60 ? "strong" : status.rssi > -72 ? "okay" : "weak";
   const color = status.online ? "var(--ok)" : "var(--ink-4)";
@@ -158,6 +160,7 @@ function StatusLine({ status, paired }: { status: LampStatus; paired: boolean })
       </span>
       {!status.online && ago != null && <span>last heard {ago < 1 ? "just now" : ago < 120 ? `${ago} min ago` : `${Math.round(ago / 60)} h ago`}</span>}
       {status.online && signal && <span>Wi-Fi {signal} ({status.rssi} dBm)</span>}
+      {quiet}
     </p>
   );
 }
@@ -219,7 +222,7 @@ function PlayPanel({ preview, onPlayed }: { preview?: boolean; onPlayed: (p: Lam
   );
 }
 
-function SettingsPanel({ initial, preview }: { initial: LampSettings; preview?: boolean }) {
+function SettingsPanel({ initial, preview, onSaved }: { initial: LampSettings; preview?: boolean; onSaved: (s: LampStatus) => void }) {
   const [s, setS] = useState(initial);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
@@ -237,6 +240,7 @@ function SettingsPanel({ initial, preview }: { initial: LampSettings; preview?: 
       else {
         const json = await post({ action: "settings", settings: s });
         setS(json.settings);
+        onSaved(json.status);
         setMsg(json.message);
       }
     } catch (e) {
@@ -306,7 +310,7 @@ function SettingsPanel({ initial, preview }: { initial: LampSettings; preview?: 
               {HOURS.map((o) => <option key={o.h} value={o.h}>{o.label}</option>)}
             </select>
           </span>
-          <span className="muted">Victoria time. Play above still works.</span>
+          <span className="muted">Victoria time. The lamp stays dark (no glow) and the site doesn&apos;t light it. Play above still works.</span>
         </div>
       </div>
 

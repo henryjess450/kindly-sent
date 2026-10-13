@@ -97,9 +97,11 @@ export function getLampSettings(): LampSettings {
   }
 }
 
+/** Saves, then wakes the lamp so it picks up the new brightness and idle look straight away. */
 export function saveLampSettings(input: unknown) {
   const s = parseLampSettings(input);
   writeSetting(SETTINGS_KEY, JSON.stringify(s));
+  wakeLamp("settings");
   return s;
 }
 
@@ -143,21 +145,34 @@ export function lampSeen(p: Pick<LampPresence, "rssi" | "version">, waitingDelta
 export function lampPresence() {
   const p = lamp.presence;
   const ms = p ? Date.now() - p.seenAt : null;
-  return { online: !!p && (p.waiting > 0 || ms! < 60_000), agoMin: ms == null ? null : Math.round(ms / 60_000), rssi: p?.rssi ?? null, version: p?.version ?? null };
+  return {
+    online: !!p && (p.waiting > 0 || ms! < 60_000),
+    agoMin: ms == null ? null : Math.round(ms / 60_000),
+    rssi: p?.rssi ?? null,
+    version: p?.version ?? null,
+    quietNow: inQuietHours(getLampSettings()),
+  };
 }
 export type LampStatus = ReturnType<typeof lampPresence>;
 
-/** Resolves after `ms`, or sooner if something is queued for the lamp. */
+type Wake = "queued" | "settings";
+
+/** Wakes the lamp's open request: something to play, or new settings to answer with. */
+const wakeLamp = (why: Wake) => lamp.bus.dispatchEvent(new Event(why));
+
+/** Resolves after `ms` with null, or sooner with why the lamp was woken. */
 export function waitForLamp(ms: number, signal: AbortSignal) {
-  return new Promise<void>((resolve) => {
-    const done = () => {
+  return new Promise<Wake | null>((resolve) => {
+    const done = (e?: Event) => {
       clearTimeout(timer);
       lamp.bus.removeEventListener("queued", done);
+      lamp.bus.removeEventListener("settings", done);
       signal.removeEventListener("abort", done);
-      resolve();
+      resolve(e?.type === "queued" || e?.type === "settings" ? e.type : null);
     };
     const timer = setTimeout(done, ms);
     lamp.bus.addEventListener("queued", done);
+    lamp.bus.addEventListener("settings", done);
     signal.addEventListener("abort", done);
   });
 }
@@ -170,7 +185,7 @@ export function queueLamp(anims: LampAnim[], reason: string, cents: number | nul
   for (const a of anims) insert.run(a, reason, cents, Date.now());
   // Keep the table small: the lamp only ever needs the last few minutes.
   getDb().prepare("DELETE FROM lamp_events WHERE id <= (SELECT MAX(id) FROM lamp_events) - 500").run();
-  lamp.bus.dispatchEvent(new Event("queued"));
+  wakeLamp("queued");
 }
 
 export type LampPlay = { id: number; anim: string; reason: string; cents: number | null; at: number };
@@ -178,11 +193,15 @@ export type LampPlay = { id: number; anim: string; reason: string; cents: number
 export const recentPlays = (n = 12) =>
   (getDb().prepare("SELECT id, anim, reason, cents, created_at AS at FROM lamp_events ORDER BY id DESC LIMIT ?").all(n) as LampPlay[]).map((r) => ({ ...r }));
 
-function inQuietHours(s: LampSettings, now = new Date()) {
+/** True during quiet hours, Victoria time. "From 10 p.m. to 8 a.m." runs over midnight. */
+export function inQuietHours(s: LampSettings, now = new Date()) {
   if (!s.quiet.on || s.quiet.from === s.quiet.to) return false;
   const h = Number(new Intl.DateTimeFormat("en-CA", { hour: "numeric", hourCycle: "h23", timeZone: TIME_ZONE }).format(now));
   return s.quiet.from < s.quiet.to ? h >= s.quiet.from && h < s.quiet.to : h >= s.quiet.from || h < s.quiet.to;
 }
+
+/** The idle look the lamp should show right now: dark during quiet hours. */
+export const idleNow = (s: LampSettings, now = new Date()) => (inQuietHours(s, now) ? "off" : s.idle);
 
 /** Cards bought so far, for milestones. Group cards count once each; yearly repeats don't count again. */
 function cardsBought() {
